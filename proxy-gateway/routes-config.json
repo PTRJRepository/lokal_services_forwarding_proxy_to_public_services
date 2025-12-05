@@ -1,0 +1,30 @@
+[
+    {
+        "id": "payroll-frontend",
+        "path": "/",
+        "target": "http://localhost:5175",
+        "description": "Payroll Frontend (Vite/React)",
+        "enabled": true
+    },
+    {
+        "id": "route-1764918166601",
+        "path": "/upah",
+        "target": "http://localhost:5175",
+        "description": "Payroll",
+        "enabled": true
+    },
+    {
+        "id": "route-1764918806125",
+        "path": "/absen",
+        "target": "http://localhost:5176",
+        "description": "Absen",
+        "enabled": true
+    },
+    {
+        "id": "route-1764919699160",
+        "path": "/monitoring-beras",
+        "target": "http://localhost:5177",
+        "description": "Monto",
+        "enabled": true
+    }
+]
