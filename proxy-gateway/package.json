@@ -1,22 +1,20 @@
 {
   "name": "proxy-gateway",
   "version": "1.0.0",
-  "description": "API Gateway & Proxy Management System with Web UI",
+  "description": "Unified Dashboard and Proxy Gateway for PT Rebinmas Jaya",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "node server.js",
+    "build:dashboard": "cd Dashboard_Utama && npx next build"
   },
-  "keywords": ["proxy", "gateway", "api-gateway", "routing"],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
     "http-proxy-middleware": "^2.0.6",
-    "cors": "^2.8.5",
-    "morgan": "^1.10.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
+    "morgan": "^1.10.0",
+    "next": "^14.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }
