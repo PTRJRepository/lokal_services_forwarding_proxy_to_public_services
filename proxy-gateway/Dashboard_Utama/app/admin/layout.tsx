@@ -18,7 +18,7 @@ export default async function AdminLayout({
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-red-600">Akses Ditolak</h1>
                     <p className="mt-2 text-gray-600">Anda harus menjadi administrator untuk melihat halaman ini.</p>
-                    <Link href="/dashboard" className="mt-4 inline-block px-4 py-2 bg-palm-green text-white rounded-lg">
+                    <Link href="/config-path" className="mt-4 inline-block px-4 py-2 bg-palm-green text-white rounded-lg">
                         Kembali ke Dashboard
                     </Link>
                 </div>
@@ -34,9 +34,9 @@ export default async function AdminLayout({
                     <span className="text-xl font-bold text-white">REBINMAS ADMIN</span>
                 </div>
                 <nav className="flex-1 p-4 space-y-1">
-                    <Link href="/dashboard" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <Link href="/config-path" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                         <LayoutDashboard className="w-5 h-5 mr-3 text-gray-400" />
-                        Dashboard
+                        Konfigurasi Route
                     </Link>
                     <Link href="/admin" className="flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg group transition-colors">
                         <Settings className="w-5 h-5 mr-3 text-white" />

@@ -19,12 +19,9 @@ const CONFIG_FILE = path.join(__dirname, 'routes-config.json');
 // Middleware
 app.use(cors());
 app.use(morgan('dev'));
-// express.json() can conflict with Next.js body parsing if applied globally to Next routes
-// app.use(express.json()); 
 
 // Load routes configuration
 let routes = [];
-let proxyMiddleware = new Map();
 
 function loadRoutes() {
     try {
@@ -42,94 +39,191 @@ function loadRoutes() {
     }
 }
 
+function saveRoutes() {
+    try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(routes, null, 4));
+        console.log('✅ Routes saved to configuration');
+    } catch (error) {
+        console.error('❌ Error saving routes:', error.message);
+    }
+}
+
 // Initial load
 loadRoutes();
 
 // Watch for file changes to hot-reload config
 fs.watchFile(CONFIG_FILE, (curr, prev) => {
-    console.log('🔄 valid config change detected, reloading...');
+    console.log('🔄 Config change detected, reloading...');
     loadRoutes();
-    applyProxyRoutes();
 });
 
-// Apply dynamic proxy routes
-function applyProxyRoutes() {
-    // Remove existing proxy middleware
-    for (const [path, middleware] of proxyMiddleware) {
-        // Express stack filtering is hacky, but works for simple stacks.
-        // Better: Mount proxies on a sub-router or specific paths.
-        // For now, we just rely on the router stack order or route replacement?
-        // Actually, removing from app._router.stack is risky with Next.js mixed in.
-        // Safer approach: use a router for proxies and swap it?
-        // Or just let the proxy middleware check the dynamic 'routes' array inside its handler? (Dynamic Router Pattern)
+// ============================================
+// SERVE STATIC CONFIG UI AT /config-path
+// Must be BEFORE nextApp.prepare() to avoid Next.js intercepting
+// ============================================
 
-        // Let's use the Dynamic Proxy Pattern: one middleware that checks the list.
-    }
-    // We will switch to a single dynamic middleware approach below to avoid stack manipulation issues
-}
+// Serve static files for route management dashboard
+app.use('/dashboard', express.static(path.join(__dirname, 'public')));
+
+// Serve /config-path as static dashboard HTML
+app.get('/config-path', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 nextApp.prepare().then(() => {
 
-    // 1. Dynamic Proxy Middleware
+    // ============================================
+    // ROUTE MANAGEMENT API ENDPOINTS
+    // ============================================
+
+    // Get all routes
+    app.get('/api/routes', (req, res) => {
+        res.json(routes);
+    });
+
+    // Add new route
+    app.post('/api/routes', express.json(), (req, res) => {
+        const { path: routePath, target, description, enabled } = req.body;
+
+        if (!routePath || !target) {
+            return res.status(400).json({ error: 'Path and target are required' });
+        }
+
+        const newRoute = {
+            id: `route-${Date.now()}`,
+            path: routePath,
+            target,
+            description: description || '',
+            enabled: enabled !== false
+        };
+
+        routes.push(newRoute);
+        saveRoutes();
+
+        res.json({ message: 'Route added successfully', route: newRoute });
+    });
+
+    // Update route
+    app.put('/api/routes/:id', express.json(), (req, res) => {
+        const { id } = req.params;
+        const { path: routePath, target, description, enabled } = req.body;
+
+        const index = routes.findIndex(r => r.id === id);
+        if (index === -1) {
+            return res.status(404).json({ error: 'Route not found' });
+        }
+
+        routes[index] = {
+            ...routes[index],
+            path: routePath || routes[index].path,
+            target: target || routes[index].target,
+            description: description !== undefined ? description : routes[index].description,
+            enabled: enabled !== undefined ? enabled : routes[index].enabled
+        };
+
+        saveRoutes();
+        res.json({ message: 'Route updated successfully', route: routes[index] });
+    });
+
+    // Toggle route enabled/disabled
+    app.post('/api/routes/:id/toggle', (req, res) => {
+        const { id } = req.params;
+
+        const index = routes.findIndex(r => r.id === id);
+        if (index === -1) {
+            return res.status(404).json({ error: 'Route not found' });
+        }
+
+        routes[index].enabled = !routes[index].enabled;
+        saveRoutes();
+
+        res.json({ message: `Route ${routes[index].enabled ? 'enabled' : 'disabled'}`, route: routes[index] });
+    });
+
+    // Delete route
+    app.delete('/api/routes/:id', (req, res) => {
+        const { id } = req.params;
+
+        const index = routes.findIndex(r => r.id === id);
+        if (index === -1) {
+            return res.status(404).json({ error: 'Route not found' });
+        }
+
+        routes.splice(index, 1);
+        saveRoutes();
+
+        res.json({ message: 'Route deleted successfully' });
+    });
+
+    // Check route health
+    app.get('/api/routes/:id/health', async (req, res) => {
+        const { id } = req.params;
+
+        const route = routes.find(r => r.id === id);
+        if (!route) {
+            return res.status(404).json({ error: 'Route not found' });
+        }
+
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(route.target, {
+                method: 'HEAD',
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+
+            res.json({ status: response.ok ? 'healthy' : 'unhealthy' });
+        } catch (error) {
+            res.json({ status: 'unhealthy', error: error.message });
+        }
+    });
+
+    // ============================================
+    // DYNAMIC PROXY MIDDLEWARE
+    // ============================================
+
     app.use((req, res, next) => {
-        const path = req.path;
+        const reqPath = req.path;
 
         // Skip Next.js internal paths immediately
-        if (path.startsWith('/_next') || path.startsWith('/static')) {
+        if (reqPath.startsWith('/_next') || reqPath.startsWith('/static')) {
+            return nextHandle(req, res);
+        }
+
+        // Skip dashboard routes - let Next.js handle them
+        const isDashboardRoute =
+            reqPath === '/' ||
+            reqPath === '/login' ||
+            reqPath.startsWith('/config-path') ||
+            reqPath.startsWith('/dashboard') ||
+            reqPath.startsWith('/admin') ||
+            reqPath.startsWith('/api/auth') ||
+            reqPath.startsWith('/api/services') ||
+            reqPath.startsWith('/api/routes');
+
+        if (isDashboardRoute) {
             return nextHandle(req, res);
         }
 
         // Check if path matches a defined proxy route
-        // Sort by length to match specific first
         const sortedRoutes = [...routes].sort((a, b) => b.path.length - a.path.length);
-
-        const matchedRoute = sortedRoutes.find(r => r.enabled && path.startsWith(r.path));
+        const matchedRoute = sortedRoutes.find(r => r.enabled && reqPath.startsWith(r.path));
 
         if (matchedRoute) {
-            // If it's the root path proxy, we might want to be careful not to shadow Next.js
-            // But if user defined "/" proxy, they probably want it.
-            // EXCEPT: We want Dashboard to be the default UI.
-            // So we only proxy specific routes usually.
-
-            // Issue: If "/" is mapped to something, Dashboard is unreachable?
-            // User Request: "Dashboard Utama disinkronisasi... tempat user login... bridge"
-            // So Dashboard IS the root app.
-            // We should ONLY proxy paths that are explicitly NOT the dashboard paths.
-
-            // Let's assume dashboard routes are: /, /login, /dashboard, /admin, /api/auth
-            const isDashboardRoute =
-                path === '/' ||
-                path === '/login' ||
-                path.startsWith('/dashboard') ||
-                path.startsWith('/admin') ||
-                path.startsWith('/api/auth');
-
-            if (isDashboardRoute && matchedRoute.path === '/') {
-                // Collision: Root is proxied, but we want Main Dashboard?
-                // Strategy: If matched route is explicitly "/", ignore it? 
-                // Or maybe user WANTS to map "/" to dashboard? 
-                // Let's assume "/" goes to Next.js by default unless explicitly overriden, 
-                // BUT we are building the dashboard integration.
-                return nextHandle(req, res);
-            }
-
-            // Proceed with Proxy
-            console.log(`🔀 Proxying ${path} -> ${matchedRoute.target}`);
+            console.log(`🔀 Proxying ${reqPath} -> ${matchedRoute.target}`);
 
             return createProxyMiddleware({
                 target: matchedRoute.target,
                 changeOrigin: true,
                 pathRewrite: {
-                    [`^${matchedRoute.path}`]: '' // Rewrite prefix? Or keep it? User says "pemisah path". Usually means strip it?
-                    // existing logic had: pathRewrite: { [`^${route.path}`]: '' }
-                },
-                onProxyReq: (proxyReq, req, res) => {
-                    // copy from original logic if needed
+                    [`^${matchedRoute.path}`]: ''
                 }
             })(req, res, next);
         }
 
-        // 2. Default failover to Next.js
+        // Default failover to Next.js
         return nextHandle(req, res);
     });
 
@@ -137,5 +231,6 @@ nextApp.prepare().then(() => {
         if (err) throw err;
         console.log(`\n> 🚀 Unified Server running on http://localhost:${PORT}`);
         console.log(`> 🖥️  Dashboard & Proxy Gateway Integrated`);
+        console.log(`> ⚙️  Route Config: http://localhost:${PORT}/config-path`);
     });
 });

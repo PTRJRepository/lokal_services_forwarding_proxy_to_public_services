@@ -38,8 +38,8 @@ export default function LoginForm() {
                 localStorage.setItem('user', JSON.stringify(data.user))
             }
 
-            // Redirect to dashboard
-            router.push('/dashboard')
+            // Redirect to admin panel
+            router.push('/admin')
             router.refresh()
 
         } catch (err) {

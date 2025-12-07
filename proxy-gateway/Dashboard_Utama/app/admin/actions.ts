@@ -1,11 +1,8 @@
 'use server'
 
-import { PrismaClient } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
-import { syncRoutesConfig } from '@/utils/sync'
-import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
+import { userRepository } from '@/utils/user-repository'
+import { serviceRepository } from '@/utils/service-repository'
 
 // USER ACTIONS
 export async function createUser(formData: FormData) {
@@ -17,12 +14,6 @@ export async function createUser(formData: FormData) {
     // Validate required fields
     if (!name || !email || !password || !role) {
         return { error: 'Semua field harus diisi' }
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-        return { error: 'Format email tidak valid' }
     }
 
     // Validate password length
@@ -38,26 +29,14 @@ export async function createUser(formData: FormData) {
 
     try {
         // Check if email already exists
-        const existingUser = await prisma.user.findUnique({
-            where: { email }
-        })
+        const existingUser = await userRepository.findByEmail(email)
 
         if (existingUser) {
             return { error: 'Email sudah terdaftar' }
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 10)
-
-        // Create user
-        await prisma.user.create({
-            data: {
-                name,
-                email,
-                password: hashedPassword,
-                role
-            }
-        })
+        // Create user using repository
+        await userRepository.create({ name, email, password, role })
 
         revalidatePath('/admin')
         return { message: 'Pengguna berhasil dibuat' }
@@ -69,62 +48,85 @@ export async function createUser(formData: FormData) {
 
 export async function deleteUser(userId: string) {
     try {
-        await prisma.user.delete({
-            where: { id: userId }
-        })
+        await userRepository.delete(parseInt(userId))
         revalidatePath('/admin')
-        return { message: 'User deleted successfully' }
+        return { message: 'User berhasil dihapus' }
     } catch (e) {
-        return { message: 'Failed to delete user' }
+        return { error: 'Gagal menghapus user' }
     }
 }
 
 // SERVICE ACTIONS
 export async function addService(formData: FormData) {
+    const serviceId = formData.get('serviceId') as string
     const name = formData.get('name') as string
     const description = formData.get('description') as string
-    const routeUrl = formData.get('routeUrl') as string
-
-    // Proxy fields
+    const serviceUrl = formData.get('serviceUrl') as string
     const path = formData.get('path') as string
-    const targetUrl = formData.get('targetUrl') as string
+
+    if (!serviceId || !name || !serviceUrl) {
+        return { error: 'Service ID, Nama, dan URL harus diisi' }
+    }
 
     try {
-        await prisma.service.create({
-            data: {
-                name,
-                description,
-                routeUrl,
-                path: path || null,
-                targetUrl: targetUrl || null
-            }
+        await serviceRepository.create({
+            serviceId,
+            name,
+            description: description || '',
+            serviceUrl,
+            path: path || null,
+            enabled: true
         })
 
-        // Trigger Sync
-        await syncRoutesConfig();
-
         revalidatePath('/admin')
-        revalidatePath('/dashboard')
-        return { message: 'Service added successfully' }
+        return { message: 'Service berhasil ditambahkan' }
     } catch (e) {
-        console.error(e)
-        return { message: 'Failed to add service' }
+        console.error('Error adding service:', e)
+        return { error: 'Gagal menambahkan service' }
     }
 }
 
 export async function deleteService(serviceId: string) {
     try {
-        await prisma.service.delete({
-            where: { id: serviceId }
-        })
-
-        // Trigger Sync
-        await syncRoutesConfig();
-
+        await serviceRepository.delete(serviceId)
         revalidatePath('/admin')
-        revalidatePath('/dashboard')
-        return { message: 'Service deleted successfully' }
+        return { message: 'Service berhasil dihapus' }
     } catch (e) {
-        return { message: 'Failed to delete service' }
+        return { error: 'Gagal menghapus service' }
+    }
+}
+
+// ROLE PERMISSION ACTIONS
+export async function assignServiceToRole(formData: FormData) {
+    const role = formData.get('role') as string
+    const serviceId = formData.get('serviceId') as string
+
+    if (!role || !serviceId) {
+        return { error: 'Role dan Service ID harus diisi' }
+    }
+
+    try {
+        await serviceRepository.assignToRole(role, serviceId)
+        revalidatePath('/admin')
+        return { message: 'Hak akses berhasil diberikan' }
+    } catch (e) {
+        return { error: 'Gagal memberikan hak akses' }
+    }
+}
+
+export async function removeServiceFromRole(formData: FormData) {
+    const role = formData.get('role') as string
+    const serviceId = formData.get('serviceId') as string
+
+    if (!role || !serviceId) {
+        return { error: 'Role dan Service ID harus diisi' }
+    }
+
+    try {
+        await serviceRepository.removeFromRole(role, serviceId)
+        revalidatePath('/admin')
+        return { message: 'Hak akses berhasil dicabut' }
+    } catch (e) {
+        return { error: 'Gagal mencabut hak akses' }
     }
 }

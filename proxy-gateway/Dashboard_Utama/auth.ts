@@ -1,38 +1,30 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import { PrismaClient } from "@prisma/client"
-import bcrypt from "bcryptjs"
 import { z } from "zod"
-
-const prisma = new PrismaClient()
-
-async function getUser(email: string) {
-    try {
-        const user = await prisma.user.findUnique({
-            where: { email },
-        });
-        return user;
-    } catch (error) {
-        console.error('Failed to fetch user:', error);
-        throw new Error('Failed to fetch user.');
-    }
-}
+import { userRepository } from "./utils/user-repository"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     providers: [
         Credentials({
             async authorize(credentials) {
                 const parsedCredentials = z
-                    .object({ email: z.string().email(), password: z.string().min(6) })
+                    .object({ email: z.string(), password: z.string().min(6) })
                     .safeParse(credentials);
 
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data;
-                    const user = await getUser(email);
-                    if (!user || !user.password) return null;
 
-                    const passwordsMatch = await bcrypt.compare(password, user.password);
-                    if (passwordsMatch) return user;
+                    // Use SQL Server via userRepository
+                    const user = await userRepository.verifyPassword(email, password);
+
+                    if (user) {
+                        return {
+                            id: String(user.id),
+                            name: user.name,
+                            email: user.email,
+                            role: user.role
+                        };
+                    }
                 }
 
                 console.log('Invalid credentials');
@@ -41,7 +33,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }),
     ],
     callbacks: {
-        async jwt({ token, user, trigger, session }) {
+        async jwt({ token, user }) {
             if (user) {
                 token.role = (user as any).role
                 token.id = user.id
@@ -59,4 +51,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     pages: {
         signIn: '/login',
     },
+    trustHost: true,
 })

@@ -1,41 +1,23 @@
-import bcrypt from 'bcryptjs'
-import { query } from './db'
-import { signToken, JwtPayload } from './jwt'
-
-export interface User {
-    id: number
-    name: string
-    email: string
-    password: string
-    role: string
-    createdAt: Date
-}
+import { userRepository, User, UserWithoutPassword } from './user-repository'
+import { serviceRepository, Service } from './service-repository'
+import { signToken } from './jwt'
 
 export interface AuthResult {
     success: boolean
     token?: string
-    user?: Omit<User, 'password'>
+    user?: UserWithoutPassword
     error?: string
 }
 
+/**
+ * Authenticate user with email and password
+ */
 export async function authenticateUser(email: string, password: string): Promise<AuthResult> {
     try {
-        // Find user by email
-        const users = await query<User>(
-            'SELECT * FROM user_ptrj WHERE email = @email',
-            { email }
-        )
+        const user = await userRepository.verifyPassword(email, password)
 
-        if (users.length === 0) {
-            return { success: false, error: 'Email tidak ditemukan' }
-        }
-
-        const user = users[0]
-
-        // Verify password
-        const isValid = await bcrypt.compare(password, user.password)
-        if (!isValid) {
-            return { success: false, error: 'Password salah' }
+        if (!user) {
+            return { success: false, error: 'Email atau password salah' }
         }
 
         // Generate JWT token
@@ -60,33 +42,60 @@ export async function authenticateUser(email: string, password: string): Promise
     }
 }
 
-export async function getUserServices(role: string): Promise<any[]> {
+/**
+ * Get services allowed for a user role
+ */
+export async function getUserServices(role: string): Promise<Service[]> {
     try {
-        const services = await query(
-            `SELECT s.* FROM service_ptrj s
-             INNER JOIN role_service_permission rsp ON s.serviceId = rsp.serviceId
-             WHERE rsp.role = @role AND s.enabled = 1`,
-            { role }
-        )
-        return services
+        return await serviceRepository.findByRole(role)
     } catch (error) {
         console.error('Error fetching services:', error)
         return []
     }
 }
 
-export async function createUser(name: string, email: string, password: string, role: string): Promise<boolean> {
+/**
+ * Create new user
+ */
+export async function createUser(
+    name: string,
+    email: string,
+    password: string,
+    role: string
+): Promise<{ success: boolean; error?: string }> {
     try {
-        const hashedPassword = await bcrypt.hash(password, 10)
-        await query(
-            `INSERT INTO user_ptrj (name, email, password, role) VALUES (@name, @email, @password, @role)`,
-            { name, email, password: hashedPassword, role }
-        )
-        return true
+        // Check if email exists
+        const existing = await userRepository.findByEmail(email)
+        if (existing) {
+            return { success: false, error: 'Email sudah terdaftar' }
+        }
+
+        await userRepository.create({ name, email, password, role })
+        return { success: true }
     } catch (error) {
         console.error('Error creating user:', error)
-        return false
+        return { success: false, error: 'Gagal membuat user' }
     }
 }
 
-export default { authenticateUser, getUserServices, createUser }
+/**
+ * Get all users
+ */
+export async function getAllUsers(): Promise<UserWithoutPassword[]> {
+    return userRepository.findAll()
+}
+
+/**
+ * Delete user
+ */
+export async function deleteUser(id: number): Promise<boolean> {
+    return userRepository.delete(id)
+}
+
+export default {
+    authenticateUser,
+    getUserServices,
+    createUser,
+    getAllUsers,
+    deleteUser
+}

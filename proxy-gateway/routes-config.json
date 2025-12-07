@@ -1,30 +1,23 @@
 [
     {
-        "id": "payroll-frontend",
-        "path": "/",
-        "target": "http://localhost:5175",
-        "description": "Payroll Frontend (Vite/React)",
-        "enabled": true
-    },
-    {
-        "id": "route-1764918166601",
+        "id": "upah",
         "path": "/upah",
         "target": "http://localhost:5175",
-        "description": "Payroll",
+        "description": "Sistem Penggajian/Payroll",
         "enabled": true
     },
     {
-        "id": "route-1764918806125",
+        "id": "absen",
         "path": "/absen",
         "target": "http://localhost:5176",
-        "description": "Absen",
+        "description": "Sistem Absensi Karyawan",
         "enabled": true
     },
     {
-        "id": "route-1764919699160",
+        "id": "monitoring-beras",
         "path": "/monitoring-beras",
         "target": "http://localhost:5177",
-        "description": "Monto",
+        "description": "Monitoring Distribusi Beras",
         "enabled": true
     }
 ]
