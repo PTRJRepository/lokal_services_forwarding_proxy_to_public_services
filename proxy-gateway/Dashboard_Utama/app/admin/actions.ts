@@ -3,10 +3,70 @@
 import { PrismaClient } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { syncRoutesConfig } from '@/utils/sync'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 // USER ACTIONS
+export async function createUser(formData: FormData) {
+    const name = formData.get('name') as string
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const role = formData.get('role') as string
+
+    // Validate required fields
+    if (!name || !email || !password || !role) {
+        return { error: 'Semua field harus diisi' }
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+        return { error: 'Format email tidak valid' }
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+        return { error: 'Password minimal 6 karakter' }
+    }
+
+    // Validate role
+    const validRoles = ['ADMIN', 'KERANI', 'ACCOUNTING']
+    if (!validRoles.includes(role)) {
+        return { error: 'Peran tidak valid' }
+    }
+
+    try {
+        // Check if email already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        })
+
+        if (existingUser) {
+            return { error: 'Email sudah terdaftar' }
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        // Create user
+        await prisma.user.create({
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+                role
+            }
+        })
+
+        revalidatePath('/admin')
+        return { message: 'Pengguna berhasil dibuat' }
+    } catch (e) {
+        console.error('Error creating user:', e)
+        return { error: 'Gagal membuat pengguna' }
+    }
+}
+
 export async function deleteUser(userId: string) {
     try {
         await prisma.user.delete({

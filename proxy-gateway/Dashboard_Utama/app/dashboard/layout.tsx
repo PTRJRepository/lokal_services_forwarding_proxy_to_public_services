@@ -26,7 +26,7 @@ export default async function DashboardLayout({
                     {user?.role === 'ADMIN' && (
                         <Link href="/admin" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-600 rounded-lg group hover:bg-green-50 hover:text-palm-green transition-colors">
                             <Settings className="w-5 h-5 mr-3 text-gray-400 group-hover:text-palm-green" />
-                            Admin Panel
+                            Panel Admin
                         </Link>
                     )}
                 </nav>
@@ -40,8 +40,8 @@ export default async function DashboardLayout({
                             </div>
                         )}
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
-                            <p className="text-xs text-gray-500 uppercase">{user?.role || 'Staff'}</p>
+                            <p className="text-sm font-medium text-gray-900">{user?.name || 'Pengguna'}</p>
+                            <p className="text-xs text-gray-500 uppercase">{user?.role || 'Staf'}</p>
                         </div>
                     </div>
                     <form action={async () => {
@@ -50,7 +50,7 @@ export default async function DashboardLayout({
                     }}>
                         <button className="flex w-full items-center px-4 py-2 mt-2 text-sm text-gray-500 hover:text-red-600 transition-colors">
                             <LogOut className="w-4 h-4 mr-2" />
-                            Sign Out
+                            Keluar
                         </button>
                     </form>
                 </div>

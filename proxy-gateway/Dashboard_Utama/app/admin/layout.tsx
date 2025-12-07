@@ -16,10 +16,10 @@ export default async function AdminLayout({
         return (
             <div className="flex h-screen items-center justify-center bg-gray-50">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-red-600">Access Denied</h1>
-                    <p className="mt-2 text-gray-600">You must be an administrator to view this page.</p>
+                    <h1 className="text-2xl font-bold text-red-600">Akses Ditolak</h1>
+                    <p className="mt-2 text-gray-600">Anda harus menjadi administrator untuk melihat halaman ini.</p>
                     <Link href="/dashboard" className="mt-4 inline-block px-4 py-2 bg-palm-green text-white rounded-lg">
-                        Return to Dashboard
+                        Kembali ke Dashboard
                     </Link>
                 </div>
             </div>
@@ -40,7 +40,7 @@ export default async function AdminLayout({
                     </Link>
                     <Link href="/admin" className="flex items-center px-4 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg group transition-colors">
                         <Settings className="w-5 h-5 mr-3 text-white" />
-                        User Management
+                        Manajemen Pengguna
                     </Link>
                     {/* Add Service Management Link later */}
                 </nav>
@@ -54,8 +54,8 @@ export default async function AdminLayout({
                             </div>
                         )}
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-900">{user?.name || 'User'}</p>
-                            <p className="text-xs text-gray-500 uppercase">{user?.role || 'Staff'}</p>
+                            <p className="text-sm font-medium text-gray-900">{user?.name || 'Pengguna'}</p>
+                            <p className="text-xs text-gray-500 uppercase">{user?.role || 'Staf'}</p>
                         </div>
                     </div>
                     <form action={async () => {
@@ -64,7 +64,7 @@ export default async function AdminLayout({
                     }}>
                         <button className="flex w-full items-center px-4 py-2 mt-2 text-sm text-gray-500 hover:text-red-600 transition-colors">
                             <LogOut className="w-4 h-4 mr-2" />
-                            Sign Out
+                            Keluar
                         </button>
                     </form>
                 </div>

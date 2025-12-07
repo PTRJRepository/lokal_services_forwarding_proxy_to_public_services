@@ -16,7 +16,7 @@ export default function ServiceTable({ services }: { services: Service[] }) {
     const router = useRouter()
 
     const handleDelete = async (id: string) => {
-        if (confirm('Delete this service?')) {
+        if (confirm('Hapus layanan ini?')) {
             await deleteService(id)
             router.refresh()
         }
@@ -27,10 +27,10 @@ export default function ServiceTable({ services }: { services: Service[] }) {
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                     <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proxied Path</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jalur Proxy</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Target URL</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
