@@ -1,9 +1,37 @@
 const express = require('express');
+const http = require('http');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
 const morgan = require('morgan');
 const fs = require('fs');
 const path = require('path');
+
+// Load environment configuration based on NODE_ENV
+// Development: localhost
+// Production: 223.25.98.220 (atau fallback 10.0.0.110)
+const env = process.env.NODE_ENV || 'development';
+const envPath = path.join(__dirname, `.env.${env}`);
+
+// Load dotenv if the file exists
+if (fs.existsSync(envPath)) {
+    require('dotenv').config({ path: envPath });
+    console.log(`✅ Loaded environment from: .env.${env}`);
+} else {
+    // Fallback to default .env if exists
+    const defaultEnvPath = path.join(__dirname, '.env');
+    if (fs.existsSync(defaultEnvPath)) {
+        require('dotenv').config({ path: defaultEnvPath });
+        console.log('✅ Loaded environment from: .env (default)');
+    } else {
+        console.log('⚠️ No .env file found, using environment variables');
+    }
+}
+
+// Log current environment
+console.log(`🌍 Running in ${env.toUpperCase()} mode`);
+console.log(`📡 Backend Host: ${process.env.BACKEND_HOST || 'localhost'}`);
+console.log(`📡 Fallback Host: ${process.env.BACKEND_HOST_FALLBACK || 'localhost'}`);
+
 // Use the exact Next.js version from the dashboard app to avoid manifest version mismatch
 const next = require('./Dashboard_Utama/node_modules/next');
 
@@ -13,8 +41,12 @@ const nextApp = next({ dev, dir: path.join(__dirname, 'Dashboard_Utama') });
 const nextHandle = nextApp.getRequestHandler();
 
 const app = express();
-const PORT = 3001;
-const CONFIG_FILE = path.join(__dirname, 'routes-config.json');
+const PORT = process.env.PORT || 3001;
+
+// Determine which config file to use based on environment
+const CONFIG_FILE = path.join(__dirname, `routes-config.${env}.json`);
+const DEFAULT_CONFIG_FILE = path.join(__dirname, 'routes-config.json');
+
 
 // Middleware
 app.use(cors());
@@ -22,13 +54,22 @@ app.use(morgan('dev'));
 
 // Load routes configuration
 let routes = [];
+let activeConfigFile = CONFIG_FILE;
 
 function loadRoutes() {
     try {
+        // Try environment-specific config first
         if (fs.existsSync(CONFIG_FILE)) {
             const data = fs.readFileSync(CONFIG_FILE, 'utf8');
             routes = JSON.parse(data);
-            console.log(`✅ Loaded ${routes.length} routes from configuration`);
+            activeConfigFile = CONFIG_FILE;
+            console.log(`✅ Loaded ${routes.length} routes from: routes-config.${env}.json`);
+        } else if (fs.existsSync(DEFAULT_CONFIG_FILE)) {
+            // Fallback to default config
+            const data = fs.readFileSync(DEFAULT_CONFIG_FILE, 'utf8');
+            routes = JSON.parse(data);
+            activeConfigFile = DEFAULT_CONFIG_FILE;
+            console.log(`✅ Loaded ${routes.length} routes from: routes-config.json (fallback)`);
         } else {
             console.log('⚠️ Config file not found, starting empty.');
             routes = [];
@@ -41,8 +82,8 @@ function loadRoutes() {
 
 function saveRoutes() {
     try {
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(routes, null, 4));
-        console.log('✅ Routes saved to configuration');
+        fs.writeFileSync(activeConfigFile, JSON.stringify(routes, null, 4));
+        console.log(`✅ Routes saved to: ${path.basename(activeConfigFile)}`);
     } catch (error) {
         console.error('❌ Error saving routes:', error.message);
     }
@@ -52,12 +93,19 @@ function saveRoutes() {
 loadRoutes();
 
 // Watch for file changes to hot-reload config
-fs.watchFile(CONFIG_FILE, (curr, prev) => {
-    console.log('🔄 Config change detected, reloading...');
-    loadRoutes();
-    // Clear proxy cache when routes change
-    proxyCache.clear();
-    console.log('🧹 Proxy cache cleared');
+// Watch both environment-specific and default config files
+const filesToWatch = [CONFIG_FILE, DEFAULT_CONFIG_FILE];
+filesToWatch.forEach(file => {
+    if (fs.existsSync(file)) {
+        fs.watchFile(file, (curr, prev) => {
+            console.log(`🔄 Config change detected in ${path.basename(file)}, reloading...`);
+            loadRoutes();
+            // Clear proxy caches when routes change
+            proxyCache.clear();
+            wsProxyCache.clear();
+            console.log('🧹 Proxy cache cleared');
+        });
+    }
 });
 
 // ============================================
@@ -77,8 +125,11 @@ app.get('/config-path', (req, res) => {
 // PROXY MIDDLEWARE CACHE
 // ============================================
 
-// Cache for proxy middleware instances
+// Cache for proxy middleware instances (HTTP with content rewriting)
 const proxyCache = new Map();
+
+// Separate cache for WebSocket proxies (no selfHandleResponse)
+const wsProxyCache = new Map();
 
 // Function to get or create proxy middleware for a route
 function getProxyMiddleware(route) {
@@ -117,7 +168,7 @@ function getProxyMiddleware(route) {
                 proxyReq.removeHeader('If-Modified-Since');
 
                 // Add cache control headers for static assets
-                if (req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+                if (req.path && req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
                     proxyReq.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
                     proxyReq.setHeader('Pragma', 'no-cache');
                     proxyReq.setHeader('Expires', '0');
@@ -206,6 +257,38 @@ function getProxyMiddleware(route) {
         proxyCache.set(route.id, proxy);
     }
     return proxyCache.get(route.id);
+}
+
+// Function to get or create WebSocket proxy middleware for a route
+// This is separate because WebSocket needs direct connection without selfHandleResponse
+function getWsProxyMiddleware(route) {
+    if (!wsProxyCache.has(route.id)) {
+        console.log(`📦 Creating WebSocket proxy for ${route.path} -> ${route.target}`);
+
+        // Create pathRewrite rule to strip the route path prefix
+        const pathRewriteRule = {};
+        pathRewriteRule[`^${route.path}`] = '';
+
+        const wsProxy = createProxyMiddleware({
+            target: route.target,
+            changeOrigin: true,
+            pathRewrite: pathRewriteRule,
+            ws: true,
+            logLevel: 'debug',
+            // NO selfHandleResponse for WebSocket - it needs direct connection
+            onError: (err, req, socket) => {
+                console.error(`❌ WebSocket proxy error for ${route.path}:`, err.message);
+                if (socket && socket.destroy) {
+                    socket.destroy();
+                }
+            },
+            onProxyReqWs: (proxyReq, req, socket, options, head) => {
+                console.log(`🔌 WebSocket proxying: ${req.url} -> ${route.target}`);
+            }
+        });
+        wsProxyCache.set(route.id, wsProxy);
+    }
+    return wsProxyCache.get(route.id);
 }
 
 nextApp.prepare().then(() => {
@@ -319,6 +402,53 @@ nextApp.prepare().then(() => {
     });
 
     // ============================================
+    // LEGACY API ROUTES FOR BACKWARD COMPATIBILITY
+    // ============================================
+
+    // Get backend host from environment (uses BACKEND_HOST or fallback to localhost)
+    const absenHost = process.env.BACKEND_HOST || 'localhost';
+    const absenPort = process.env.ABSEN_PORT || '5176';
+    const absenTarget = `http://${absenHost}:${absenPort}`;
+
+    // Route attendance API calls to the absen service
+    app.use('/api/attendance', createProxyMiddleware({
+        target: absenTarget,
+        changeOrigin: true,
+        pathRewrite: {
+            '^/api': '/api'
+        },
+        logLevel: 'debug',
+        onError: (err, req, res) => {
+            console.error('❌ Attendance API proxy error:', err.message);
+            if (!res.headersSent) {
+                res.status(502).json({
+                    error: 'Service Unavailable',
+                    message: 'Attendance service is not reachable'
+                });
+            }
+        }
+    }));
+
+    // Route attendance-by-loc-enhanced API calls to the absen service
+    app.use('/api/attendance-by-loc-enhanced', createProxyMiddleware({
+        target: absenTarget,
+        changeOrigin: true,
+        pathRewrite: {
+            '^/api': '/api'
+        },
+        logLevel: 'debug',
+        onError: (err, req, res) => {
+            console.error('❌ Attendance API proxy error:', err.message);
+            if (!res.headersSent) {
+                res.status(502).json({
+                    error: 'Service Unavailable',
+                    message: 'Attendance service is not reachable'
+                });
+            }
+        }
+    }));
+
+    // ============================================
     // DYNAMIC PROXY MIDDLEWARE
     // ============================================
 
@@ -329,11 +459,14 @@ nextApp.prepare().then(() => {
     // Check if path matches a defined proxy route FIRST
     app.use((req, res, next) => {
         const reqPath = req.path;
+        const referer = req.get('Referer');
 
-        // Skip API and management routes
-        if (reqPath.startsWith('/api/') ||
-            reqPath === '/config-path' ||
-            reqPath.startsWith('/_static')) {
+        // Skip management and static routes
+        if (reqPath === '/config-path' ||
+            reqPath.startsWith('/_static') ||
+            reqPath.startsWith('/api/routes') ||
+            reqPath.startsWith('/api/auth') ||
+            reqPath.startsWith('/api/services')) {
             return next();
         }
 
@@ -344,10 +477,42 @@ nextApp.prepare().then(() => {
 
         // Sort routes by path length (longest first) to ensure specific routes match before generic ones
         const sortedRoutes = [...routes].sort((a, b) => b.path.length - a.path.length);
-        const matchedRoute = sortedRoutes.find(r => r.enabled && reqPath.startsWith(r.path));
+
+        // Find matching route either by direct path match or by referer for asset requests
+        let matchedRoute = sortedRoutes.find(r => r.enabled && reqPath.startsWith(r.path));
+
+        // If no direct match, check if this is an asset request based on referer
+        if (!matchedRoute && referer) {
+            for (const route of sortedRoutes) {
+                if (route.enabled && referer.includes(route.path)) {
+                    // This is likely an asset request for this route
+                    matchedRoute = route;
+                    console.log(`📎 Asset request detected for ${route.path}: ${reqPath}`);
+                    break;
+                }
+            }
+        }
 
         if (matchedRoute) {
             console.log(`🔀 Proxying ${reqPath} -> ${matchedRoute.target}`);
+
+            // Check if this is a WebSocket upgrade request
+            const isWebSocketRequest =
+                (req.headers.connection || '').toLowerCase().includes('upgrade') ||
+                (req.headers.upgrade || '').toLowerCase() === 'websocket';
+
+            // Use passthrough proxy (no selfHandleResponse) when:
+            // 1. This is a WebSocket upgrade request
+            // 2. rewriteContent is explicitly set to false
+            const usePassthroughProxy = isWebSocketRequest || matchedRoute.rewriteContent === false;
+
+            if (usePassthroughProxy) {
+                console.log(`🔌 Using passthrough proxy for: ${reqPath} (WebSocket: ${isWebSocketRequest}, rewriteContent: ${matchedRoute.rewriteContent})`);
+                const wsProxy = getWsProxyMiddleware(matchedRoute);
+                return wsProxy(req, res, next);
+            }
+
+            // Use regular proxy with content rewriting for normal HTTP requests
             const proxyMiddleware = getProxyMiddleware(matchedRoute);
             return proxyMiddleware(req, res, next);
         }
@@ -370,7 +535,8 @@ nextApp.prepare().then(() => {
             reqPath.startsWith('/dashboard') ||
             reqPath.startsWith('/admin') ||
             reqPath.startsWith('/api/auth') ||
-            reqPath.startsWith('/api/services');
+            reqPath.startsWith('/api/services') ||
+            reqPath.startsWith('/api/routes');
 
         if (isDashboardRoute) {
             return nextHandle(req, res);
@@ -389,10 +555,42 @@ nextApp.prepare().then(() => {
         });
     });
 
-    app.listen(PORT, (err) => {
+    // Create HTTP server for WebSocket support
+    const server = http.createServer(app);
+
+    // Handle WebSocket upgrade requests
+    server.on('upgrade', (req, socket, head) => {
+        const reqPath = req.url;
+        console.log(`🔌 WebSocket upgrade: ${reqPath}`);
+
+        const sortedRoutes = [...routes].sort((a, b) => b.path.length - a.path.length);
+        let matchedRoute = sortedRoutes.find(r => r.enabled && reqPath.startsWith(r.path));
+
+        // WebSocket HMR requests might come as relative paths
+        // Check if the origin header contains a route path
+        if (!matchedRoute && req.headers.origin) {
+            matchedRoute = sortedRoutes.find(r => r.enabled && req.headers.origin.includes(r.path));
+            if (matchedRoute) {
+                console.log(`🔌 WebSocket HMR request detected for ${matchedRoute.path}: ${reqPath}`);
+            }
+        }
+
+        if (matchedRoute) {
+            console.log(`🔌 WebSocket -> ${matchedRoute.target}`);
+            // Use dedicated WebSocket proxy (without selfHandleResponse)
+            const wsProxy = getWsProxyMiddleware(matchedRoute);
+            wsProxy.upgrade(req, socket, head);
+        } else {
+            console.log(`❌ No WebSocket route for: ${reqPath}`);
+            socket.destroy();
+        }
+    });
+
+    server.listen(PORT, (err) => {
         if (err) throw err;
         console.log(`\n> 🚀 Unified Server running on http://localhost:${PORT}`);
         console.log(`> 🖥️  Dashboard & Proxy Gateway Integrated`);
         console.log(`> ⚙️  Route Config: http://localhost:${PORT}/config-path`);
+        console.log(`> 🔌 WebSocket proxy enabled`);
     });
 });

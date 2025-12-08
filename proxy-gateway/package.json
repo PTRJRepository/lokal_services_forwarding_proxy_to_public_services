@@ -4,12 +4,15 @@
   "description": "Unified Dashboard and Proxy Gateway for PT Rebinmas Jaya",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "cross-env NODE_ENV=production node server.js",
+    "dev": "cross-env NODE_ENV=development node server.js",
+    "prod": "cross-env NODE_ENV=production node server.js",
     "build:dashboard": "cd Dashboard_Utama && npx next build"
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "http-proxy-middleware": "^2.0.6",
     "morgan": "^1.10.0",

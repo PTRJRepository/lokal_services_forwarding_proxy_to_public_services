@@ -2,7 +2,7 @@
     {
         "id": "upah",
         "path": "/upah",
-        "target": "http://10.0.0.110:5175",
+        "target": "http://223.25.98.220:5175",
         "description": "Sistem Penggajian/Payroll",
         "enabled": true,
         "rewriteContent": true
@@ -10,7 +10,7 @@
     {
         "id": "absen",
         "path": "/absen",
-        "target": "http://10.0.0.110:5176",
+        "target": "http://223.25.98.220:5176",
         "description": "Sistem Absensi Karyawan",
         "enabled": true,
         "rewriteContent": true
@@ -18,7 +18,7 @@
     {
         "id": "monitoring-beras",
         "path": "/monitoring-beras",
-        "target": "http://10.0.0.110:5177",
+        "target": "http://223.25.98.220:5177",
         "description": "Monitoring Distribusi Beras",
         "enabled": true,
         "rewriteContent": true
