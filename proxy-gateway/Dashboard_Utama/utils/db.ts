@@ -2,8 +2,8 @@ import sql, { ConnectionPool, IResult } from 'mssql'
 
 // Database configuration from environment
 const config: sql.config = {
-    server: process.env.MSSQL_HOST || '223.25.98.220',
-    port: parseInt(process.env.MSSQL_PORT || '3001'),
+    server: process.env.MSSQL_HOST || '10.0.0.110',
+    port: parseInt(process.env.MSSQL_PORT || '1433'),
     user: process.env.MSSQL_USER || 'sa',
     password: process.env.MSSQL_PASSWORD || 'ptrj@123',
     database: process.env.MSSQL_DATABASE || 'extend_db_ptrj',

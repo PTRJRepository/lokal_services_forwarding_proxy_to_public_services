@@ -6,6 +6,7 @@ export interface Service {
     name: string
     description?: string
     serviceUrl: string
+    targetUrl?: string
     path?: string
     enabled: boolean
     createdAt?: Date

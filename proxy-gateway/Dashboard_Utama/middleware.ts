@@ -1,29 +1,36 @@
-import NextAuth from "next-auth"
-import { auth } from "@/auth"
+import { NextRequest, NextResponse } from 'next/server'
 
-const { auth: middleware } = NextAuth({
-    providers: [] // providers not needed validation in middleware
-})
+export function middleware(request: NextRequest) {
+    const pathname = request.nextUrl.pathname
 
-export default auth((req) => {
-    const isLoggedIn = !!req.auth
-    const isOnAdmin = req.nextUrl.pathname.startsWith('/admin')
-    const isLoginPage = req.nextUrl.pathname.startsWith('/login')
+    // Check for auth-token cookie (our custom JWT token)
+    const authToken = request.cookies.get('auth-token')?.value
+    const isLoggedIn = !!authToken
 
-    // Only /admin requires authentication
-    if (isOnAdmin) {
-        if (isLoggedIn) return
-        return Response.redirect(new URL('/login', req.nextUrl))
+    const isOnAdmin = pathname.startsWith('/admin')
+    const isOnDashboard = pathname.startsWith('/dashboard')
+    const isLoginPage = pathname.startsWith('/login')
+    const isProtectedRoute = isOnAdmin || isOnDashboard
+
+    // Protected routes require authentication
+    if (isProtectedRoute) {
+        if (isLoggedIn) {
+            return NextResponse.next()
+        }
+        return NextResponse.redirect(new URL('/login', request.url))
     }
 
+    // Redirect logged-in users from login page to dashboard
     if (isLoginPage) {
         if (isLoggedIn) {
-            return Response.redirect(new URL('/admin', req.nextUrl))
+            return NextResponse.redirect(new URL('/dashboard', request.url))
         }
     }
-})
+
+    return NextResponse.next()
+}
 
 export const config = {
-    // Exclude /config-path and /dashboard from middleware - they are served by Express
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|config-path|dashboard).*)'],
+    // Match dashboard and admin routes, exclude api and static files
+    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|config-path|assets).*)'],
 }

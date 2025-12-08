@@ -2,22 +2,40 @@ import jwt from 'jsonwebtoken'
 import fs from 'fs'
 import path from 'path'
 
-// Load RSA keys
-const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH || './keys/private.pem'
-const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH || './keys/public.pem'
+let privateKey: string = ''
+let publicKey: string = ''
 
-let privateKey: string
-let publicKey: string
+// Load keys - server.js runs from proxy-gateway
+// Next.js runs from Dashboard_Utama via server.js
+function loadKeys() {
+    // Try multiple relative paths
+    const possibleDirs = [
+        // If cwd is Dashboard_Utama (Next.js direct)
+        path.join(process.cwd(), 'keys'),
+        // If cwd is proxy-gateway (server.js)
+        path.join(process.cwd(), 'Dashboard_Utama', 'keys'),
+    ]
 
-try {
-    privateKey = fs.readFileSync(path.resolve(process.cwd(), privateKeyPath), 'utf8')
-    publicKey = fs.readFileSync(path.resolve(process.cwd(), publicKeyPath), 'utf8')
-} catch (error) {
-    console.error('Failed to load RSA keys:', error)
-    // Fallback - will fail if keys don't exist
-    privateKey = ''
-    publicKey = ''
+    for (const keysDir of possibleDirs) {
+        const privPath = path.join(keysDir, 'private.pem')
+        const pubPath = path.join(keysDir, 'public.pem')
+
+        try {
+            if (fs.existsSync(privPath) && fs.existsSync(pubPath)) {
+                privateKey = fs.readFileSync(privPath, 'utf8')
+                publicKey = fs.readFileSync(pubPath, 'utf8')
+                console.log('✅ RSA keys loaded from:', keysDir)
+                return
+            }
+        } catch (error) {
+            // Continue to next path
+        }
+    }
+
+    console.error('⚠️ RSA keys not found. Tried:', possibleDirs)
 }
+
+loadKeys()
 
 export interface JwtPayload {
     userId: number
@@ -35,7 +53,7 @@ export function signToken(payload: Omit<JwtPayload, 'iat' | 'exp'>): string {
 
     return jwt.sign(payload, privateKey, {
         algorithm: 'RS256',
-        expiresIn: '8h', // Token expires in 8 hours
+        expiresIn: '8h',
     })
 }
 

@@ -3,18 +3,18 @@
 import { useState } from 'react'
 import { Edit2, Trash2 } from 'lucide-react'
 
-// Mock interface, typically shared
+// User interface for SQL Server
 interface User {
-    id: string
-    name: string | null
+    id: number
+    name: string
     email: string
     role: string
 }
 
 interface AdminTableProps {
     users: User[]
-    onDelete: (id: string) => void
-    onEdit: (id: string) => void
+    onDelete: (id: number) => void
+    onEdit: (id: number) => void
 }
 
 export default function AdminTable({ users, onDelete, onEdit }: AdminTableProps) {
@@ -48,7 +48,7 @@ export default function AdminTable({ users, onDelete, onEdit }: AdminTableProps)
                                         </div>
                                     </div>
                                     <div className="ml-4">
-                                        <div className="text-sm font-medium text-gray-900">{user.name || 'N/A'}</div>
+                                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
                                     </div>
                                 </div>
                             </td>

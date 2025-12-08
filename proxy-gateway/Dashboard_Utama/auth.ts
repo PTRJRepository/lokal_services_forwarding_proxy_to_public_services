@@ -1,29 +1,44 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { z } from "zod"
-import { userRepository } from "./utils/user-repository"
+
+// Note: We cannot import userRepository here because mssql is not compatible with Edge runtime
+// The actual authentication happens in /api/auth/login API route
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+    secret: process.env.AUTH_SECRET || "ptrj-rebinmas-secret-key-2024",
     providers: [
         Credentials({
             async authorize(credentials) {
                 const parsedCredentials = z
-                    .object({ email: z.string(), password: z.string().min(6) })
+                    .object({ email: z.string().min(1), password: z.string().min(6) }) // email is actually username
                     .safeParse(credentials);
 
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data;
 
-                    // Use SQL Server via userRepository
-                    const user = await userRepository.verifyPassword(email, password);
+                    // Call our API endpoint to verify credentials
+                    try {
+                        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3001'
+                        const response = await fetch(`${baseUrl}/api/auth/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password }),
+                        });
 
-                    if (user) {
-                        return {
-                            id: String(user.id),
-                            name: user.name,
-                            email: user.email,
-                            role: user.role
-                        };
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.user) {
+                                return {
+                                    id: String(data.user.id),
+                                    name: data.user.name,
+                                    email: data.user.email,
+                                    role: data.user.role
+                                };
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Auth error:', error);
                     }
                 }
 

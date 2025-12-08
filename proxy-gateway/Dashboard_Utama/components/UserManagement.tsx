@@ -6,8 +6,8 @@ import AddUserForm from './AddUserForm'
 import { UserPlus } from 'lucide-react'
 
 interface User {
-    id: string
-    name: string | null
+    id: number
+    name: string
     email: string
     role: string
 }

@@ -5,8 +5,8 @@ const bcrypt = require('bcryptjs');
 const sql = require('mssql');
 
 const config = {
-    server: process.env.MSSQL_HOST || '223.25.98.220',
-    port: parseInt(process.env.MSSQL_PORT || '3001'),
+    server: process.env.MSSQL_HOST || '10.0.0.110',
+    port: parseInt(process.env.MSSQL_PORT || '1433'),
     user: process.env.MSSQL_USER || 'sa',
     password: process.env.MSSQL_PASSWORD || 'ptrj@123',
     database: process.env.MSSQL_DATABASE || 'extend_db_ptrj',
@@ -67,7 +67,7 @@ async function seedAdmin() {
         console.error('❌ Error:', error.message);
         if (error.message.includes('ECONNREFUSED')) {
             console.log('\nPastikan:');
-            console.log('1. SQL Server running di 223.25.98.220:3001');
+            console.log('1. SQL Server running di ' + config.server + ':' + config.port);
             console.log('2. TCP port forwarder berjalan');
             console.log('3. Database extend_db_ptrj sudah dibuat');
         }

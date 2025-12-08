@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { KeyRound, Mail, ArrowRight, Loader2 } from 'lucide-react'
+import { KeyRound, User, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function LoginForm() {
     const router = useRouter()
-    const [email, setEmail] = useState('')
+    const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -22,7 +22,8 @@ export default function LoginForm() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, password }),
+                credentials: 'include', // Important: include cookies in request/response
+                body: JSON.stringify({ email: username, password }),
             })
 
             const data = await response.json()
@@ -38,9 +39,8 @@ export default function LoginForm() {
                 localStorage.setItem('user', JSON.stringify(data.user))
             }
 
-            // Redirect to admin panel
-            router.push('/admin')
-            router.refresh()
+            // Use window.location for full page reload to ensure cookies are processed
+            window.location.href = '/dashboard-user'
 
         } catch (err) {
             setError('Terjadi kesalahan. Silakan coba lagi.')
@@ -50,33 +50,34 @@ export default function LoginForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700" htmlFor="email">
-                    Email
+                <label className="block text-sm font-semibold text-gray-800" htmlFor="username">
+                    Username
                 </label>
                 <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-palm-green" />
                     <input
-                        className="w-full rounded-lg border border-gray-300 pl-10 p-2.5 text-sm focus:border-palm-green focus:ring-palm-green outline-none transition-all"
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="nama@rebinmas.com"
+                        className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 pl-12 pr-4 py-3.5 text-gray-900 text-sm focus:border-palm-green focus:bg-white focus:ring-2 focus:ring-palm-green/20 outline-none transition-all placeholder:text-gray-400"
+                        id="username"
+                        type="text"
+                        name="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Masukkan username"
                         required
                     />
                 </div>
             </div>
+
             <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700" htmlFor="password">
+                <label className="block text-sm font-semibold text-gray-800" htmlFor="password">
                     Kata Sandi
                 </label>
                 <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-palm-green" />
                     <input
-                        className="w-full rounded-lg border border-gray-300 pl-10 p-2.5 text-sm focus:border-palm-green focus:ring-palm-green outline-none transition-all"
+                        className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 pl-12 pr-4 py-3.5 text-gray-900 text-sm focus:border-palm-green focus:bg-white focus:ring-2 focus:ring-palm-green/20 outline-none transition-all placeholder:text-gray-400"
                         id="password"
                         type="password"
                         name="password"
@@ -90,25 +91,26 @@ export default function LoginForm() {
             </div>
 
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-                    {error}
+                <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">
+                    ⚠️ {error}
                 </div>
             )}
 
-            <div className="pt-2">
+            <div className="pt-3">
                 <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-palm-green px-4 py-2.5 text-sm font-medium text-white hover:bg-palm-green-hover focus:outline-none focus:ring-2 focus:ring-palm-green focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-palm-green to-emerald-600 px-6 py-4 text-base font-semibold text-white shadow-lg hover:shadow-xl hover:from-palm-green-hover hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-palm-green/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                 >
                     {isLoading ? (
                         <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-5 w-5 animate-spin" />
                             Sedang Masuk...
                         </>
                     ) : (
                         <>
-                            Masuk <ArrowRight className="h-4 w-4" />
+                            Masuk
+                            <ArrowRight className="h-5 w-5" />
                         </>
                     )}
                 </button>

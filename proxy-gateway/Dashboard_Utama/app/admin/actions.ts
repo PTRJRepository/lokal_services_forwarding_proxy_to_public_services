@@ -74,7 +74,7 @@ export async function addService(formData: FormData) {
             name,
             description: description || '',
             serviceUrl,
-            path: path || null,
+            path: path || undefined,
             enabled: true
         })
 

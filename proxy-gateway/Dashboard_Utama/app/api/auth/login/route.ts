@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateUser } from '@/utils/auth-service'
 
+// Use Node.js runtime for mssql compatibility
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()

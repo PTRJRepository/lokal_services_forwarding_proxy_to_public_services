@@ -55,6 +55,9 @@ loadRoutes();
 fs.watchFile(CONFIG_FILE, (curr, prev) => {
     console.log('🔄 Config change detected, reloading...');
     loadRoutes();
+    // Clear proxy cache when routes change
+    proxyCache.clear();
+    console.log('🧹 Proxy cache cleared');
 });
 
 // ============================================
@@ -62,13 +65,53 @@ fs.watchFile(CONFIG_FILE, (curr, prev) => {
 // Must be BEFORE nextApp.prepare() to avoid Next.js intercepting
 // ============================================
 
-// Serve static files for route management dashboard
-app.use('/dashboard', express.static(path.join(__dirname, 'public')));
+// Serve static files for route management config UI (CSS, JS)
+app.use('/_static', express.static(path.join(__dirname, 'public')));
 
-// Serve /config-path as static dashboard HTML
+// Serve /config-path as static config management HTML
 app.get('/config-path', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// ============================================
+// PROXY MIDDLEWARE CACHE
+// ============================================
+
+// Cache for proxy middleware instances
+const proxyCache = new Map();
+
+// Function to get or create proxy middleware for a route
+function getProxyMiddleware(route) {
+    if (!proxyCache.has(route.id)) {
+        console.log(`📦 Creating proxy middleware for ${route.path} -> ${route.target}`);
+        const proxy = createProxyMiddleware({
+            target: route.target,
+            changeOrigin: true,
+            // NO pathRewrite - let backend receive full path
+            // Backend Vite apps need to be configured with base path
+            ws: true, // Support WebSocket for Vite HMR
+            logLevel: 'debug',
+            onError: (err, req, res) => {
+                console.error(`❌ Proxy error for ${route.path}:`, err.message);
+                if (!res.headersSent) {
+                    res.status(502).json({
+                        error: 'Proxy Error',
+                        message: `Backend service at ${route.target} is not reachable`,
+                        details: err.message
+                    });
+                }
+            },
+            onProxyReq: (proxyReq, req, res) => {
+                console.log(`➡️ Proxying: ${req.method} ${req.originalUrl} -> ${route.target}${req.originalUrl}`);
+            },
+            onProxyRes: (proxyRes, req, res) => {
+                console.log(`⬅️ Response: ${proxyRes.statusCode} from ${route.target}`);
+            }
+        });
+        proxyCache.set(route.id, proxy);
+    }
+    return proxyCache.get(route.id);
+}
 
 nextApp.prepare().then(() => {
 
@@ -213,14 +256,8 @@ nextApp.prepare().then(() => {
 
         if (matchedRoute) {
             console.log(`🔀 Proxying ${reqPath} -> ${matchedRoute.target}`);
-
-            return createProxyMiddleware({
-                target: matchedRoute.target,
-                changeOrigin: true,
-                pathRewrite: {
-                    [`^${matchedRoute.path}`]: ''
-                }
-            })(req, res, next);
+            const proxyMiddleware = getProxyMiddleware(matchedRoute);
+            return proxyMiddleware(req, res, next);
         }
 
         // Default failover to Next.js

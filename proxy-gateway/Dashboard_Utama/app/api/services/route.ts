@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/utils/jwt'
 import { getUserServices } from '@/utils/auth-service'
 
+// Use Node.js runtime for mssql compatibility
+export const runtime = 'nodejs'
+
 export async function GET(request: NextRequest) {
     try {
         // Get token from cookie or header
