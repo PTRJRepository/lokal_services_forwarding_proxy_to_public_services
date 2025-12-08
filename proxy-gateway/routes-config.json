@@ -2,21 +2,21 @@
     {
         "id": "upah",
         "path": "/upah",
-        "target": "http://localhost:5175",
+        "target": "http://10.0.0.110:5175",
         "description": "Sistem Penggajian/Payroll",
         "enabled": true
     },
     {
         "id": "absen",
         "path": "/absen",
-        "target": "http://localhost:5176",
+        "target": "http://10.0.0.110:5176",
         "description": "Sistem Absensi Karyawan",
         "enabled": true
     },
     {
         "id": "monitoring-beras",
         "path": "/monitoring-beras",
-        "target": "http://localhost:5177",
+        "target": "http://10.0.0.110:5177",
         "description": "Monitoring Distribusi Beras",
         "enabled": true
     }
