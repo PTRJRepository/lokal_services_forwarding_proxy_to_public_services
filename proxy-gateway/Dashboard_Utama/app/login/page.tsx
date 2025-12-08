@@ -8,7 +8,13 @@ export default function LoginPage() {
         <main className="flex min-h-screen items-center justify-center relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
             {/* Background Pattern */}
             <div className="absolute inset-0 z-0 opacity-20">
-                <div className="absolute inset-0 bg-[url('/assets/kelapa-sawit-pohon.webp')] bg-cover bg-center" />
+                <Image
+                    src="/assets/kebun sawit.webp"
+                    alt="Perkebunan Kelapa Sawit"
+                    fill
+                    className="object-cover"
+                    priority
+                />
             </div>
 
             {/* Decorative Shapes */}

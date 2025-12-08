@@ -14,6 +14,7 @@ export default function HeroSection() {
                     src="/assets/kelapa-sawit-pohon.webp"
                     alt="Perkebunan Kelapa Sawit"
                     fill
+                    sizes="100vw"
                     className="object-cover"
                     priority
                 />
@@ -25,25 +26,32 @@ export default function HeroSection() {
 
             {/* Floating particles effect */}
             <div className="absolute inset-0 z-5 overflow-hidden">
-                {[...Array(20)].map((_, i) => (
-                    <motion.div
-                        key={i}
-                        className="absolute w-2 h-2 bg-golden-yellow/30 rounded-full"
-                        initial={{
-                            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1000),
-                            y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
-                        }}
-                        animate={{
-                            y: [null, -100],
-                            opacity: [0, 1, 0],
-                        }}
-                        transition={{
-                            duration: 3 + Math.random() * 2,
-                            repeat: Infinity,
-                            delay: Math.random() * 2,
-                        }}
-                    />
-                ))}
+                {[...Array(20)].map((_, i) => {
+                    // Use deterministic values to avoid hydration mismatch
+                    const seed = i * 137.5; // Golden angle for better distribution
+                    const x = 50 + (Math.sin(seed) * 40); // Percentage between 10% and 90%
+                    const y = 20 + (i * 4); // Distribute vertically
+
+                    return (
+                        <motion.div
+                            key={i}
+                            className="absolute w-2 h-2 bg-golden-yellow/30 rounded-full"
+                            style={{
+                                left: `${x}%`,
+                                top: `${y}%`,
+                            }}
+                            animate={{
+                                y: [null, -100],
+                                opacity: [0, 1, 0],
+                            }}
+                            transition={{
+                                duration: 3 + (i * 0.1), // Deterministic duration
+                                repeat: Infinity,
+                                delay: i * 0.1, // Deterministic delay
+                            }}
+                        />
+                    );
+                })}
             </div>
 
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
@@ -59,7 +67,9 @@ export default function HeroSection() {
                             src="/assets/logo.webp"
                             alt="PT Rebinmas Jaya"
                             fill
+                            sizes="112px"
                             className="object-contain p-2"
+                            loading="eager"
                         />
                     </div>
                 </motion.div>
