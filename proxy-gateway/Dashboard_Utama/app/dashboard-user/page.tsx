@@ -100,7 +100,7 @@ export default async function DashboardUserPage() {
                         {services.map((service) => (
                             <a
                                 key={service.serviceId}
-                                href={service.targetUrl || '#'}
+                                href={`${GATEWAY_BASE_URL}${service.path || `/${service.serviceId}`}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="group bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-xl hover:border-palm-green/30 hover:-translate-y-1 transition-all duration-300"
@@ -119,7 +119,7 @@ export default async function DashboardUserPage() {
                                 </p>
                                 <div className="mt-4 flex items-center justify-between">
                                     <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">
-                                        {service.targetUrl || 'URL belum diset'}
+                                        {service.path || `/${service.serviceId}`}
                                     </span>
                                     <span className="text-xs text-gray-400">
                                         Klik untuk akses

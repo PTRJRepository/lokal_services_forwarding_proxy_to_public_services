@@ -84,13 +84,22 @@ const proxyCache = new Map();
 function getProxyMiddleware(route) {
     if (!proxyCache.has(route.id)) {
         console.log(`📦 Creating proxy middleware for ${route.path} -> ${route.target}`);
+
+        // Create pathRewrite rule to strip the route path prefix
+        // e.g., /absen -> /, /absen/api -> /api
+        const pathRewriteRule = {};
+        pathRewriteRule[`^${route.path}`] = '';
+
         const proxy = createProxyMiddleware({
             target: route.target,
             changeOrigin: true,
-            // NO pathRewrite - let backend receive full path
-            // Backend Vite apps need to be configured with base path
+            pathRewrite: pathRewriteRule, // Strip the path prefix
             ws: true, // Support WebSocket for Vite HMR
             logLevel: 'debug',
+
+            // CRITICAL: Self-handle response to rewrite HTML/JS/CSS content
+            selfHandleResponse: true,
+
             onError: (err, req, res) => {
                 console.error(`❌ Proxy error for ${route.path}:`, err.message);
                 if (!res.headersSent) {
@@ -102,10 +111,96 @@ function getProxyMiddleware(route) {
                 }
             },
             onProxyReq: (proxyReq, req, res) => {
-                console.log(`➡️ Proxying: ${req.method} ${req.originalUrl} -> ${route.target}${req.originalUrl}`);
+                // Remove conditional request headers to force fresh response (not 304)
+                // This is needed so we can rewrite the HTML/JS/CSS content
+                proxyReq.removeHeader('If-None-Match');
+                proxyReq.removeHeader('If-Modified-Since');
+
+                // Add cache control headers for static assets
+                if (req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+                    proxyReq.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                    proxyReq.setHeader('Pragma', 'no-cache');
+                    proxyReq.setHeader('Expires', '0');
+                }
+
+                console.log(`➡️ Proxying: ${req.method} ${req.originalUrl} -> ${route.target}${proxyReq.path}`);
             },
             onProxyRes: (proxyRes, req, res) => {
                 console.log(`⬅️ Response: ${proxyRes.statusCode} from ${route.target}`);
+
+                const contentType = proxyRes.headers['content-type'] || '';
+                const isHtml = contentType.includes('text/html');
+                const isJs = contentType.includes('javascript') || contentType.includes('application/javascript');
+                const isCss = contentType.includes('text/css');
+
+                // Only rewrite HTML, JS, and CSS - skip root path to avoid breaking root app
+                const shouldRewrite = (isHtml || isJs || isCss) && route.path !== '/';
+
+                if (shouldRewrite) {
+                    let body = '';
+                    proxyRes.on('data', (chunk) => {
+                        body += chunk.toString('utf8');
+                    });
+
+                    proxyRes.on('end', () => {
+                        try {
+                            // Rewrite absolute paths to include base path
+                            // /app.js → /absen/app.js
+                            // /src/main.jsx → /absen/src/main.jsx
+                            // /@vite/client → /absen/@vite/client
+
+                            if (isHtml) {
+                                // Rewrite HTML: script src, link href, img src, etc.
+                                body = body.replace(/(<script[^>]+src=["']\s*)\/(?!\/)/gi, `$1${route.path}/`);
+                                body = body.replace(/(<link[^>]+href=["']\s*)\/(?!\/)/gi, `$1${route.path}/`);
+                                body = body.replace(/(<img[^>]+src=["']\s*)\/(?!\/)/gi, `$1${route.path}/`);
+                                body = body.replace(/(<a[^>]+href=["']\s*)\/(?!\/)/gi, `$1${route.path}/`);
+
+                                // Rewrite base tag if exists
+                                if (!body.includes('<base')) {
+                                    body = body.replace(/<head>/i, `<head>\n  <base href="${route.path}/">`);
+                                }
+
+                                // Handle Vite-specific paths
+                                body = body.replace(/(["'])\/@vite\//g, `$1${route.path}/@vite/`);
+                            }
+
+                            if (isJs) {
+                                // Rewrite JS: import statements and fetch calls
+                                body = body.replace(/from\s+["']\/(?!\/)/g, `from "${route.path}/`);
+                                body = body.replace(/import\s+["']\/(?!\/)/g, `import "${route.path}/`);
+                                body = body.replace(/fetch\(["']\/(?!\/)/g, `fetch("${route.path}/`);
+                            }
+
+                            if (isCss) {
+                                // Rewrite CSS: url() references
+                                body = body.replace(/url\(["']?\/(?!\/)/g, `url("${route.path}/`);
+                            }
+
+                            // Set correct headers
+                            res.statusCode = proxyRes.statusCode;
+                            Object.keys(proxyRes.headers).forEach(key => {
+                                res.setHeader(key, proxyRes.headers[key]);
+                            });
+
+                            // Update content-length
+                            res.setHeader('content-length', Buffer.byteLength(body));
+
+                            res.end(body);
+                        } catch (error) {
+                            console.error(`❌ Error rewriting content for ${route.path}:`, error.message);
+                            res.statusCode = 500;
+                            res.end('Internal Server Error');
+                        }
+                    });
+                } else {
+                    // For non-rewritable content or root path, just pipe through
+                    res.statusCode = proxyRes.statusCode;
+                    Object.keys(proxyRes.headers).forEach(key => {
+                        res.setHeader(key, proxyRes.headers[key]);
+                    });
+                    proxyRes.pipe(res);
+                }
             }
         });
         proxyCache.set(route.id, proxy);
@@ -227,30 +322,27 @@ nextApp.prepare().then(() => {
     // DYNAMIC PROXY MIDDLEWARE
     // ============================================
 
+    // ============================================
+    // PROXY MIDDLEWARE - MUST BE BEFORE Next.js HANDLER
+    // ============================================
+
+    // Check if path matches a defined proxy route FIRST
     app.use((req, res, next) => {
         const reqPath = req.path;
 
-        // Skip Next.js internal paths immediately
+        // Skip API and management routes
+        if (reqPath.startsWith('/api/') ||
+            reqPath === '/config-path' ||
+            reqPath.startsWith('/_static')) {
+            return next();
+        }
+
+        // Skip Next.js internal paths
         if (reqPath.startsWith('/_next') || reqPath.startsWith('/static')) {
             return nextHandle(req, res);
         }
 
-        // Skip dashboard routes - let Next.js handle them
-        const isDashboardRoute =
-            reqPath === '/' ||
-            reqPath === '/login' ||
-            reqPath.startsWith('/config-path') ||
-            reqPath.startsWith('/dashboard') ||
-            reqPath.startsWith('/admin') ||
-            reqPath.startsWith('/api/auth') ||
-            reqPath.startsWith('/api/services') ||
-            reqPath.startsWith('/api/routes');
-
-        if (isDashboardRoute) {
-            return nextHandle(req, res);
-        }
-
-        // Check if path matches a defined proxy route
+        // Sort routes by path length (longest first) to ensure specific routes match before generic ones
         const sortedRoutes = [...routes].sort((a, b) => b.path.length - a.path.length);
         const matchedRoute = sortedRoutes.find(r => r.enabled && reqPath.startsWith(r.path));
 
@@ -260,8 +352,41 @@ nextApp.prepare().then(() => {
             return proxyMiddleware(req, res, next);
         }
 
-        // Default failover to Next.js
-        return nextHandle(req, res);
+        // If no proxy route matches, continue to next middleware
+        next();
+    });
+
+    // ============================================
+    // Next.js ROUTES - HANDLE ONLY DASHBOARD PATHS
+    // ============================================
+
+    app.use((req, res) => {
+        const reqPath = req.path;
+
+        // Only let Next.js handle dashboard-specific routes
+        const isDashboardRoute =
+            reqPath === '/' ||
+            reqPath === '/login' ||
+            reqPath.startsWith('/dashboard') ||
+            reqPath.startsWith('/admin') ||
+            reqPath.startsWith('/api/auth') ||
+            reqPath.startsWith('/api/services');
+
+        if (isDashboardRoute) {
+            return nextHandle(req, res);
+        }
+
+        // Return 404 for unmatched routes
+        res.status(404).json({
+            error: 'Not Found',
+            message: 'No route configured for this path',
+            path: reqPath,
+            availableRoutes: routes.filter(r => r.enabled).map(r => ({
+                path: r.path,
+                target: r.target,
+                description: r.description
+            }))
+        });
     });
 
     app.listen(PORT, (err) => {
