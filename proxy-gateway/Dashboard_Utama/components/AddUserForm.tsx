@@ -4,14 +4,42 @@ import { createUser } from '@/app/admin/actions'
 import { useRef, useState } from 'react'
 import { X, UserPlus, Loader2 } from 'lucide-react'
 
-interface AddUserFormProps {
-    onClose: () => void
+interface Service {
+    serviceId: string
+    name: string
+    path?: string
 }
 
-export default function AddUserForm({ onClose }: AddUserFormProps) {
+interface AddUserFormProps {
+    onClose: () => void
+    services: Service[]
+}
+
+export default function AddUserForm({ onClose, services }: AddUserFormProps) {
     const formRef = useRef<HTMLFormElement>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [selectedRole, setSelectedRole] = useState('KERANI')
+
+    // Services selection state
+    const [selectedServices, setSelectedServices] = useState<string[]>([])
+
+    const divisOptions = [
+        { value: '', label: 'Pilih Divisi', disabled: true },
+        { value: 'ALL', label: 'ALL (Semua Kerani)', disabled: false },
+        { value: 'PGE 1A', label: 'PGE 1A', disabled: false },
+        { value: 'PGE 1B', label: 'PGE 1B', disabled: false },
+        { value: 'PGE 2A', label: 'PGE 2A', disabled: false },
+        { value: 'PGE 2B', label: 'PGE 2B', disabled: false }
+    ]
+
+    const handleServiceToggle = (serviceId: string) => {
+        setSelectedServices(prev =>
+            prev.includes(serviceId)
+                ? prev.filter(id => id !== serviceId)
+                : [...prev, serviceId]
+        )
+    }
 
     const handleSubmit = async (formData: FormData) => {
         setIsLoading(true)
@@ -33,6 +61,11 @@ export default function AddUserForm({ onClose }: AddUserFormProps) {
             return
         }
 
+        // Append selected services to formData
+        selectedServices.forEach(id => {
+            formData.append('services', id)
+        })
+
         try {
             const result = await createUser(formData)
             if (result.error) {
@@ -49,10 +82,10 @@ export default function AddUserForm({ onClose }: AddUserFormProps) {
     }
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 my-8 overflow-hidden flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-palm-green to-emerald-600 px-6 py-4 flex items-center justify-between">
+                <div className="bg-gradient-to-r from-palm-green to-emerald-600 px-6 py-4 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
                         <UserPlus className="h-6 w-6 text-white" />
                         <h3 className="text-lg font-semibold text-white">Tambah Pengguna Baru</h3>
@@ -65,111 +98,162 @@ export default function AddUserForm({ onClose }: AddUserFormProps) {
                     </button>
                 </div>
 
-                {/* Form */}
-                <form
-                    ref={formRef}
-                    action={handleSubmit}
-                    className="p-6 space-y-4"
-                >
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                            {error}
+                {/* Form - Scrollable Area */}
+                <div className="overflow-y-auto p-6">
+                    <form
+                        ref={formRef}
+                        action={handleSubmit}
+                        className="space-y-4"
+                    >
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                                {error}
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Nama Lengkap
+                            </label>
+                            <input
+                                name="name"
+                                type="text"
+                                required
+                                placeholder="Masukkan nama lengkap"
+                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
+                            />
                         </div>
-                    )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nama Lengkap
-                        </label>
-                        <input
-                            name="name"
-                            type="text"
-                            required
-                            placeholder="Masukkan nama lengkap"
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Email
+                            </label>
+                            <input
+                                name="email"
+                                type="email"
+                                required
+                                placeholder="contoh@email.com"
+                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
+                            />
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Email
-                        </label>
-                        <input
-                            name="email"
-                            type="email"
-                            required
-                            placeholder="contoh@email.com"
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
-                        />
-                    </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Password
+                                </label>
+                                <input
+                                    name="password"
+                                    type="password"
+                                    required
+                                    minLength={6}
+                                    placeholder="Min. 6 char"
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
+                                />
+                            </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Password
-                        </label>
-                        <input
-                            name="password"
-                            type="password"
-                            required
-                            minLength={6}
-                            placeholder="Minimal 6 karakter"
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
-                        />
-                    </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Konfirmasi
+                                </label>
+                                <input
+                                    name="confirmPassword"
+                                    type="password"
+                                    required
+                                    minLength={6}
+                                    placeholder="Ulangi"
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
+                                />
+                            </div>
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Konfirmasi Password
-                        </label>
-                        <input
-                            name="confirmPassword"
-                            type="password"
-                            required
-                            minLength={6}
-                            placeholder="Ulangi password"
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
-                        />
-                    </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Peran
+                            </label>
+                            <select
+                                name="role"
+                                required
+                                value={selectedRole}
+                                onChange={(e) => setSelectedRole(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all bg-white"
+                            >
+                                <option value="KERANI">Kerani</option>
+                                <option value="ACCOUNTING">Accounting</option>
+                                <option value="ADMIN">Admin</option>
+                            </select>
+                        </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Peran
-                        </label>
-                        <select
-                            name="role"
-                            required
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all bg-white"
-                        >
-                            <option value="KERANI">Kerani</option>
-                            <option value="ACCOUNTING">Accounting</option>
-                            <option value="ADMIN">Admin</option>
-                        </select>
-                    </div>
+                        {selectedRole === 'KERANI' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Divisi
+                                </label>
+                                <select
+                                    name="divisi"
+                                    required={selectedRole === 'KERANI'}
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all bg-white"
+                                >
+                                    {divisOptions.map((option) => (
+                                        <option
+                                            key={option.value}
+                                            value={option.value}
+                                            disabled={option.disabled}
+                                        >
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
-                    <div className="flex gap-3 pt-4">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="flex-1 px-4 py-2.5 bg-palm-green text-white rounded-lg hover:bg-palm-green-hover transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Menyimpan...
-                                </>
-                            ) : (
-                                'Simpan Pengguna'
-                            )}
-                        </button>
-                    </div>
-                </form>
+                        {/* Service Selection */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Hak Akses Layanan
+                            </label>
+                            <div className="border border-gray-200 rounded-lg max-h-40 overflow-y-auto p-2 space-y-1">
+                                {services.length === 0 ? (
+                                    <p className="text-xs text-gray-500 text-center py-2">Tidak ada layanan tersedia</p>
+                                ) : services.map(service => (
+                                    <label key={service.serviceId} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedServices.includes(service.serviceId)}
+                                            onChange={() => handleServiceToggle(service.serviceId)}
+                                            className="rounded border-gray-300 text-palm-green focus:ring-palm-green"
+                                        />
+                                        <span className="text-sm text-gray-700">{service.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="flex-1 px-4 py-2.5 bg-palm-green text-white rounded-lg hover:bg-palm-green-hover transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Menyimpan...
+                                    </>
+                                ) : (
+                                    'Simpan Pengguna'
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     )

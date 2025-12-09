@@ -10,6 +10,7 @@ export async function createUser(formData: FormData) {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
     const role = formData.get('role') as string
+    const divisi = formData.get('divisi') as string
 
     // Validate required fields
     if (!name || !email || !password || !role) {
@@ -27,6 +28,11 @@ export async function createUser(formData: FormData) {
         return { error: 'Peran tidak valid' }
     }
 
+    // Validate divisi for KERANI role
+    if (role === 'KERANI' && !divisi) {
+        return { error: 'Divisi harus dipilih untuk role KERANI' }
+    }
+
     try {
         // Check if email already exists
         const existingUser = await userRepository.findByEmail(email)
@@ -36,7 +42,14 @@ export async function createUser(formData: FormData) {
         }
 
         // Create user using repository
-        await userRepository.create({ name, email, password, role })
+        const newUser = await userRepository.create({ name, email, password, role, divisi })
+
+        // Assign services if provided
+        // formData.getAll('services') returns an array of strings (service IDs)
+        const serviceIds = formData.getAll('services') as string[]
+        if (newUser && serviceIds.length > 0) {
+            await userRepository.assignServices(newUser.id, serviceIds)
+        }
 
         revalidatePath('/admin')
         return { message: 'Pengguna berhasil dibuat' }
@@ -53,6 +66,118 @@ export async function deleteUser(userId: string) {
         return { message: 'User berhasil dihapus' }
     } catch (e) {
         return { error: 'Gagal menghapus user' }
+    }
+}
+
+export async function updateUser(userId: string, formData: FormData) {
+    const name = formData.get('name') as string
+    const email = formData.get('email') as string
+    const role = formData.get('role') as string
+    const divisi = formData.get('divisi') as string
+    const password = formData.get('password') as string
+    const serviceIds = formData.getAll('services') as string[] // Get services
+
+    // Validate required fields
+    if (!name || !email || !role) {
+        return { error: 'Nama, email, dan role harus diisi' }
+    }
+
+    // Validate password if provided
+    if (password && password.length < 6) {
+        return { error: 'Password minimal 6 karakter' }
+    }
+
+    // Validate role
+    const validRoles = ['ADMIN', 'KERANI', 'ACCOUNTING']
+    if (!validRoles.includes(role)) {
+        return { error: 'Peran tidak valid' }
+    }
+
+    // Validate divisi for KERANI role
+    if (role === 'KERANI' && !divisi) {
+        return { error: 'Divisi harus dipilih untuk role KERANI' }
+    }
+
+    try {
+        // Check if email exists for other user
+        const existingUser = await userRepository.findByEmail(email)
+        if (existingUser && existingUser.id !== parseInt(userId)) {
+            return { error: 'Email sudah terdaftar untuk user lain' }
+        }
+
+        // Update user data
+        const updateData: any = { name, email, role, divisi }
+        if (password) {
+            updateData.password = password
+        }
+
+        const success = await userRepository.update(parseInt(userId), updateData)
+
+        if (success) {
+            // Update assigned services
+            // If services are provided (even empty list if form sends existing ones), update them.
+            // Client must ensure to send all selected services.
+            // But wait, if we are just editing profile without services, formData might be missing 'services'.
+            // We need a way to know if services were intended to be updated.
+            // Let's assume if it's sent, we update. If not sent?
+            // If checkboxes are unchecked, formData sends nothing? 
+            // Usually we submit the whole form state.
+            // Let's assume the Edit User Form will always include the services selection state.
+            // If simple profile update, maybe we shouldn't touch services.
+            // But having a single 'updateUser' that handles everything is cleaner if the UI supports it.
+
+            // For now, let's explicitely check if 'updateServices' flag is present or assume services are always sent if we are editing user rights.
+
+            // Let's assume we ALWAYS update services if the user ID matches, OR we check if 'services' is present.
+            // BUT: formData.getAll('services') returns [] if empty.
+            // We can't distinguish between "no services selected" and "field not present".
+            // We should add a hidden field "updateServices" = "true" to the form.
+
+            const shouldUpdateServices = formData.get('updateServices') === 'true'
+
+            if (shouldUpdateServices) {
+                await userRepository.assignServices(parseInt(userId), serviceIds)
+            }
+
+            revalidatePath('/admin')
+            return { message: 'User berhasil diupdate' }
+        } else {
+            return { error: 'User tidak ditemukan' }
+        }
+    } catch (e) {
+        console.error('Error updating user:', e)
+        return { error: 'Gagal mengupdate user' }
+    }
+}
+
+// Fetch user services
+export async function fetchUserServices(userId: number) {
+    try {
+        const services = await userRepository.getUserServices(userId)
+        return services
+    } catch (e) {
+        console.error('Error fetching user services:', e)
+        return []
+    }
+}
+
+export async function resetUserPassword(userId: string, newPassword: string) {
+    if (!newPassword || newPassword.length < 6) {
+        return { error: 'Password minimal 6 karakter' }
+    }
+
+    try {
+        const success = await userRepository.update(parseInt(userId), { password: newPassword })
+
+        if (success) {
+            revalidatePath('/admin')
+            return { message: 'Password berhasil direset' }
+        } else {
+            return { error: 'User tidak ditemukan' }
+        }
+    } catch (e) {
+        console.error('Error resetting password:', e)
+        return { error: 'Gagal reset password' }
     }
 }
 
