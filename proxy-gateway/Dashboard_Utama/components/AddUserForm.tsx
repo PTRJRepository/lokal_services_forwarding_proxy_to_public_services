@@ -106,13 +106,13 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
                         className="space-y-4"
                     >
                         {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                                {error}
+                            <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-semibold">
+                                ⚠️ {error}
                             </div>
                         )}
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-gray-800 mb-1">
                                 Nama Lengkap
                             </label>
                             <input
@@ -120,12 +120,12 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
                                 type="text"
                                 required
                                 placeholder="Masukkan nama lengkap"
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
+                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all placeholder:text-gray-500"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-gray-800 mb-1">
                                 Email
                             </label>
                             <input
@@ -133,13 +133,13 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
                                 type="email"
                                 required
                                 placeholder="contoh@email.com"
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
+                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all placeholder:text-gray-500"
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">
                                     Password
                                 </label>
                                 <input
@@ -147,13 +147,13 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
                                     type="password"
                                     required
                                     minLength={6}
-                                    placeholder="Min. 6 char"
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
+                                    placeholder="Min. 6 karakter"
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all placeholder:text-gray-500"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">
                                     Konfirmasi
                                 </label>
                                 <input
@@ -161,14 +161,14 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
                                     type="password"
                                     required
                                     minLength={6}
-                                    placeholder="Ulangi"
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
+                                    placeholder="Ulangi password"
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all placeholder:text-gray-500"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-gray-800 mb-1">
                                 Peran
                             </label>
                             <select
@@ -176,29 +176,30 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
                                 required
                                 value={selectedRole}
                                 onChange={(e) => setSelectedRole(e.target.value)}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all bg-white"
+                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
                             >
-                                <option value="KERANI">Kerani</option>
-                                <option value="ACCOUNTING">Accounting</option>
-                                <option value="ADMIN">Admin</option>
+                                <option value="KERANI" className="text-gray-900">Kerani</option>
+                                <option value="ACCOUNTING" className="text-gray-900">Accounting</option>
+                                <option value="ADMIN" className="text-gray-900">Admin</option>
                             </select>
                         </div>
 
                         {selectedRole === 'KERANI' && (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">
                                     Divisi
                                 </label>
                                 <select
                                     name="divisi"
                                     required={selectedRole === 'KERANI'}
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all bg-white"
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
                                 >
                                     {divisOptions.map((option) => (
                                         <option
                                             key={option.value}
                                             value={option.value}
                                             disabled={option.disabled}
+                                            className={option.disabled ? "text-gray-400" : "text-gray-900"}
                                         >
                                             {option.label}
                                         </option>
@@ -209,21 +210,21 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
 
                         {/* Service Selection */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-semibold text-gray-800 mb-2">
                                 Hak Akses Layanan
                             </label>
-                            <div className="border border-gray-200 rounded-lg max-h-40 overflow-y-auto p-2 space-y-1">
+                            <div className="border border-gray-200 rounded-lg max-h-40 overflow-y-auto p-2 space-y-1 bg-gray-50">
                                 {services.length === 0 ? (
                                     <p className="text-xs text-gray-500 text-center py-2">Tidak ada layanan tersedia</p>
                                 ) : services.map(service => (
-                                    <label key={service.serviceId} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <label key={service.serviceId} className="flex items-center gap-2 p-2 hover:bg-white rounded cursor-pointer transition-colors">
                                         <input
                                             type="checkbox"
                                             checked={selectedServices.includes(service.serviceId)}
                                             onChange={() => handleServiceToggle(service.serviceId)}
-                                            className="rounded border-gray-300 text-palm-green focus:ring-palm-green"
+                                            className="rounded border-gray-300 text-palm-green focus:ring-palm-green focus:ring-offset-0 w-4 h-4"
                                         />
-                                        <span className="text-sm text-gray-700">{service.name}</span>
+                                        <span className="text-sm text-gray-700 font-medium">{service.name}</span>
                                     </label>
                                 ))}
                             </div>
@@ -233,14 +234,14 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                                className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-semibold hover:border-gray-400 active:scale-95"
                             >
                                 Batal
                             </button>
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="flex-1 px-4 py-2.5 bg-palm-green text-white rounded-lg hover:bg-palm-green-hover transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="flex-1 px-4 py-2.5 bg-palm-green text-white rounded-lg hover:bg-palm-green-hover transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95"
                             >
                                 {isLoading ? (
                                     <>
