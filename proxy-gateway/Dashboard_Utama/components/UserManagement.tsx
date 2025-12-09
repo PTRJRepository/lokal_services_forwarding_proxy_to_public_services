@@ -10,9 +10,21 @@ interface User {
     name: string
     email: string
     role: string
+    divisi?: string
 }
 
-export default function UserManagement({ users }: { users: User[] }) {
+interface Service {
+    serviceId: string
+    name: string
+    path?: string
+}
+
+interface UserManagementProps {
+    users: User[]
+    services: Service[]
+}
+
+export default function UserManagement({ users, services }: UserManagementProps) {
     const [showAddForm, setShowAddForm] = useState(false)
 
     return (
@@ -26,10 +38,10 @@ export default function UserManagement({ users }: { users: User[] }) {
                     Tambah Pengguna Baru
                 </button>
             </div>
-            <AdminTableWrapper users={users} />
+            <AdminTableWrapper users={users} services={services} />
 
             {showAddForm && (
-                <AddUserForm onClose={() => setShowAddForm(false)} />
+                <AddUserForm onClose={() => setShowAddForm(false)} services={services} />
             )}
         </div>
     )

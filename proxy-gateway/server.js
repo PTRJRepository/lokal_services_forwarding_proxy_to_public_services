@@ -167,11 +167,12 @@ function getProxyMiddleware(route) {
                 proxyReq.removeHeader('If-None-Match');
                 proxyReq.removeHeader('If-Modified-Since');
 
-                // Add cache control headers for static assets
+                // Add appropriate headers for static assets
                 if (req.path && req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
-                    proxyReq.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-                    proxyReq.setHeader('Pragma', 'no-cache');
-                    proxyReq.setHeader('Expires', '0');
+                    // Allow caching for static assets but ensure they're fresh
+                    proxyReq.setHeader('Cache-Control', 'public, max-age=0');
+                    proxyReq.removeHeader('If-None-Match');
+                    proxyReq.removeHeader('If-Modified-Since');
                 }
 
                 console.log(`➡️ Proxying: ${req.method} ${req.originalUrl} -> ${route.target}${proxyReq.path}`);
@@ -180,12 +181,16 @@ function getProxyMiddleware(route) {
                 console.log(`⬅️ Response: ${proxyRes.statusCode} from ${route.target}`);
 
                 const contentType = proxyRes.headers['content-type'] || '';
+                const contentEncoding = proxyRes.headers['content-encoding'] || '';
                 const isHtml = contentType.includes('text/html');
                 const isJs = contentType.includes('javascript') || contentType.includes('application/javascript');
                 const isCss = contentType.includes('text/css');
 
-                // Only rewrite HTML, JS, and CSS - skip root path to avoid breaking root app
-                const shouldRewrite = (isHtml || isJs || isCss) && route.path !== '/';
+                // Skip rewriting for compressed content (gzip, deflate, br)
+                const isCompressed = ['gzip', 'deflate', 'br'].includes(contentEncoding);
+
+                // Only rewrite HTML, JS, and CSS - skip root path and compressed content
+                const shouldRewrite = (isHtml || isJs || isCss) && route.path !== '/' && !isCompressed;
 
                 if (shouldRewrite) {
                     let body = '';

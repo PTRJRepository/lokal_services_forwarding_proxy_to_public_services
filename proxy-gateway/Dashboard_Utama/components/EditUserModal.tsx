@@ -1,0 +1,278 @@
+'use client'
+
+import { updateUser, fetchUserServices, resetUserPassword } from '@/app/admin/actions'
+import { useEffect, useState } from 'react'
+import { X, Loader2, Save, Key } from 'lucide-react'
+
+interface Service {
+    serviceId: string
+    name: string
+    path?: string
+}
+
+interface User {
+    id: number
+    name: string
+    email: string
+    role: string
+    divisi?: string
+}
+
+interface EditUserModalProps {
+    user: User
+    services: Service[]
+    onClose: () => void
+}
+
+export default function EditUserModal({ user, services, onClose }: EditUserModalProps) {
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+    // Form state
+    const [role, setRole] = useState(user.role)
+    const [divisi, setDivisi] = useState(user.divisi || '')
+    const [selectedServices, setSelectedServices] = useState<string[]>([])
+    const [isLoadingServices, setIsLoadingServices] = useState(true)
+
+    // Password reset state
+    const [showPasswordReset, setShowPasswordReset] = useState(false)
+    const [newPassword, setNewPassword] = useState('')
+
+    const divisOptions = [
+        { value: '', label: 'Pilih Divisi', disabled: true },
+        { value: 'ALL', label: 'ALL (Semua Kerani)', disabled: false },
+        { value: 'PGE 1A', label: 'PGE 1A', disabled: false },
+        { value: 'PGE 1B', label: 'PGE 1B', disabled: false },
+        { value: 'PGE 2A', label: 'PGE 2A', disabled: false },
+        { value: 'PGE 2B', label: 'PGE 2B', disabled: false }
+    ]
+
+    useEffect(() => {
+        // Fetch User Services
+        const loadServices = async () => {
+            setIsLoadingServices(true)
+            try {
+                const userServices = await fetchUserServices(user.id)
+                setSelectedServices(userServices)
+            } catch (err) {
+                console.error('Failed to load user services')
+            } finally {
+                setIsLoadingServices(false)
+            }
+        }
+        loadServices()
+    }, [user.id])
+
+    const handleServiceToggle = (serviceId: string) => {
+        setSelectedServices(prev =>
+            prev.includes(serviceId)
+                ? prev.filter(id => id !== serviceId)
+                : [...prev, serviceId]
+        )
+    }
+
+    const handleSubmit = async (formData: FormData) => {
+        setIsLoading(true)
+        setError(null)
+        setSuccessMessage(null)
+
+        // Add updateServices flag and services list manually? 
+        // No, we append to formData or use hidden inputs.
+        // It's easier to append to formData if we control the submission.
+
+        // However, we are using form action. 
+        // Let's create a new FormData or modify the existing one in the action handler?
+        // We can inject hidden inputs for services.
+    }
+
+    // Instead of pure form action, let's use client-side handler calling the server action
+    const onSave = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        setIsLoading(true)
+        setError(null)
+
+        const formData = new FormData(e.currentTarget)
+
+        // Add services
+        selectedServices.forEach(id => {
+            formData.append('services', id)
+        })
+        formData.append('updateServices', 'true')
+
+        try {
+            const result = await updateUser(String(user.id), formData)
+            if (result.error) {
+                setError(result.error)
+            } else {
+                onClose()
+            }
+        } catch (err) {
+            setError('Gagal mengupdate user')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const onResetPass = async () => {
+        if (newPassword.length < 6) {
+            setError('Password minimal 6 karakter')
+            return
+        }
+
+        setIsLoading(true)
+        setError(null)
+
+        try {
+            const result = await resetUserPassword(String(user.id), newPassword)
+            if (result.error) {
+                setError(result.error)
+            } else {
+                setSuccessMessage('Password berhasil direset')
+                setNewPassword('')
+                setShowPasswordReset(false)
+            }
+        } catch (err) {
+            setError('Gagal reset password')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto py-10">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 my-auto">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-xl">
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-semibold text-white">Edit Pengguna: {user.name}</h3>
+                    </div>
+                    <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                <div className="p-6 max-h-[80vh] overflow-y-auto">
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
+                            {error}
+                        </div>
+                    )}
+                    {successMessage && (
+                        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm mb-4">
+                            {successMessage}
+                        </div>
+                    )}
+
+                    <div className="flex gap-6 flex-col md:flex-row">
+                        {/* Main User Details */}
+                        <form onSubmit={onSave} className="flex-1 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                                <input name="name" defaultValue={user.name} type="text" required
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input name="email" defaultValue={user.email} type="email" required
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Peran</label>
+                                <select name="role" value={role} onChange={(e) => setRole(e.target.value)} required
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 transition-all bg-white">
+                                    <option value="KERANI">Kerani</option>
+                                    <option value="ACCOUNTING">Accounting</option>
+                                    <option value="ADMIN">Admin</option>
+                                </select>
+                            </div>
+
+                            {role === 'KERANI' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Divisi</label>
+                                    <select name="divisi" value={divisi} onChange={(e) => setDivisi(e.target.value)} required
+                                        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 transition-all bg-white">
+                                        {divisOptions.map((option) => (
+                                            <option key={option.value} value={option.value} disabled={option.disabled}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* Service Selection */}
+                            <div className="mt-6">
+                                <h4 className="text-sm font-medium text-gray-900 mb-3 block">Hak Akses Layanan</h4>
+                                {isLoadingServices ? (
+                                    <div className="text-center py-4 text-gray-500 text-sm">Loading services...</div>
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+                                        {services.map(service => (
+                                            <label key={service.serviceId} className="flex items-start gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedServices.includes(service.serviceId)}
+                                                    onChange={() => handleServiceToggle(service.serviceId)}
+                                                    className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <div className="text-xs">
+                                                    <div className="font-medium text-gray-700">{service.name}</div>
+                                                    <div className="text-gray-500">{service.path}</div>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <button type="submit" disabled={isLoading}
+                                className="w-full mt-6 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4" /> Simpan Perubahan</>}
+                            </button>
+                        </form>
+
+                        {/* Password Reset Section */}
+                        <div className="w-full md:w-72 md:border-l md:pl-6 border-gray-200 pt-6 md:pt-0">
+                            <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <Key className="h-4 w-4" /> Reset Password
+                            </h4>
+
+                            {!showPasswordReset ? (
+                                <button onClick={() => setShowPasswordReset(true)}
+                                    className="w-full px-4 py-2 border border-yellow-500 text-yellow-700 rounded-lg hover:bg-yellow-50 text-sm transition-colors">
+                                    Ganti Password
+                                </button>
+                            ) : (
+                                <div className="space-y-3 bg-yellow-50 p-4 rounded-lg">
+                                    <div>
+                                        <label className="block text-xs font-medium text-yellow-800 mb-1">Password Baru</label>
+                                        <input
+                                            type="password"
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            className="w-full rounded border border-yellow-300 px-2 py-1.5 text-sm"
+                                            placeholder="Min. 6 karakter"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={onResetPass} disabled={isLoading}
+                                            className="flex-1 px-2 py-1.5 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700">
+                                            Simpan
+                                        </button>
+                                        <button onClick={() => setShowPasswordReset(false)}
+                                            className="flex-1 px-2 py-1.5 bg-white border border-gray-300 text-gray-600 rounded text-xs hover:bg-gray-50">
+                                            Batal
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

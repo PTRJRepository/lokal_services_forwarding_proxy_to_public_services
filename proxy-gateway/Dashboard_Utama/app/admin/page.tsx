@@ -28,8 +28,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     const tab = params?.tab || 'users'
 
     let user = null
+    console.log('Admin Page Debug: Checking cookies...')
     if (token) {
+        console.log('Admin Page Debug: Token found in cookies')
         const payload = verifyToken(token)
+        console.log('Admin Page Debug: Token verification result:', payload)
         if (payload) {
             user = {
                 id: payload.userId,
@@ -37,7 +40,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 email: payload.email,
                 role: payload.role
             }
+            console.log('Admin Page Debug: User object constructed:', user)
+        } else {
+            console.log('Admin Page Debug: Token verification failed (payload is null)')
         }
+    } else {
+        console.log('Admin Page Debug: No auth-token found in cookies')
     }
 
     // Check if user is admin
@@ -96,7 +104,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </div>
 
             {tab === 'users' ? (
-                <UserManagement users={users} />
+                <UserManagement users={users} services={services} />
             ) : (
                 <div className="space-y-8">
                     <AddServiceForm />
