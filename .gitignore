@@ -45,4 +45,4 @@ iTunes_Control/
 Thumbs.db
 Windows/
 logs/
-*.local.json
+*.local.json"nul" 

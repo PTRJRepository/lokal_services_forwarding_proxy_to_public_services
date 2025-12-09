@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill:*)",
+      "Bash(npm start)",
+      "Bash(del:*)",
+      "Bash(powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "mcp__obsidian-mcp-tools__create_vault_file",
+      "Bash(curl:*)",
+      "mcp__obsidian-mcp-tools__get_server_info",
+      "Bash(start:*)",
+      "Bash(node:*)",
+      "Bash(ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev)",
+      "mcp__obsidian-mcp-tools__list_vault_files",
+      "mcp__obsidian-mcp-tools__search_vault_smart",
+      "Bash(dir:*)",
+      "Bash(npx tsc:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

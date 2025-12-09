@@ -143,7 +143,7 @@ export default function EditUserModal({ user, services, onClose }: EditUserModal
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto py-10">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 my-auto">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between rounded-t-xl">
+                <div className="bg-gradient-to-r from-palm-green to-emerald-600 px-6 py-4 flex items-center justify-between rounded-t-xl">
                     <div className="flex items-center gap-3">
                         <h3 className="text-lg font-semibold text-white">Edit Pengguna: {user.name}</h3>
                     </div>
@@ -154,13 +154,13 @@ export default function EditUserModal({ user, services, onClose }: EditUserModal
 
                 <div className="p-6 max-h-[80vh] overflow-y-auto">
                     {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
-                            {error}
+                        <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4 font-semibold">
+                            ⚠️ {error}
                         </div>
                     )}
                     {successMessage && (
-                        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm mb-4">
-                            {successMessage}
+                        <div className="bg-green-50 border-2 border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm mb-4 font-semibold">
+                            ✓ {successMessage}
                         </div>
                     )}
 
@@ -168,34 +168,34 @@ export default function EditUserModal({ user, services, onClose }: EditUserModal
                         {/* Main User Details */}
                         <form onSubmit={onSave} className="flex-1 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">Nama Lengkap</label>
                                 <input name="name" defaultValue={user.name} type="text" required
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all" />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">Email</label>
                                 <input name="email" defaultValue={user.email} type="email" required
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 transition-all" />
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all" />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Peran</label>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">Peran</label>
                                 <select name="role" value={role} onChange={(e) => setRole(e.target.value)} required
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 transition-all bg-white">
-                                    <option value="KERANI">Kerani</option>
-                                    <option value="ACCOUNTING">Accounting</option>
-                                    <option value="ADMIN">Admin</option>
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all">
+                                    <option value="KERANI" className="text-gray-900">Kerani</option>
+                                    <option value="ACCOUNTING" className="text-gray-900">Accounting</option>
+                                    <option value="ADMIN" className="text-gray-900">Admin</option>
                                 </select>
                             </div>
 
                             {role === 'KERANI' && (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Divisi</label>
+                                    <label className="block text-sm font-semibold text-gray-800 mb-1">Divisi</label>
                                     <select name="divisi" value={divisi} onChange={(e) => setDivisi(e.target.value)} required
-                                        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 transition-all bg-white">
+                                        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all">
                                         {divisOptions.map((option) => (
-                                            <option key={option.value} value={option.value} disabled={option.disabled}>
+                                            <option key={option.value} value={option.value} disabled={option.disabled} className={option.disabled ? "text-gray-400" : "text-gray-900"}>
                                                 {option.label}
                                             </option>
                                         ))}
@@ -205,21 +205,21 @@ export default function EditUserModal({ user, services, onClose }: EditUserModal
 
                             {/* Service Selection */}
                             <div className="mt-6">
-                                <h4 className="text-sm font-medium text-gray-900 mb-3 block">Hak Akses Layanan</h4>
+                                <h4 className="text-sm font-semibold text-gray-800 mb-3 block">Hak Akses Layanan</h4>
                                 {isLoadingServices ? (
-                                    <div className="text-center py-4 text-gray-500 text-sm">Loading services...</div>
+                                    <div className="text-center py-4 text-gray-500 text-sm bg-gray-50 rounded-lg">Memuat layanan...</div>
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-gray-50">
                                         {services.map(service => (
-                                            <label key={service.serviceId} className="flex items-start gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                            <label key={service.serviceId} className="flex items-start gap-2 p-2 hover:bg-white rounded cursor-pointer transition-colors">
                                                 <input
                                                     type="checkbox"
                                                     checked={selectedServices.includes(service.serviceId)}
                                                     onChange={() => handleServiceToggle(service.serviceId)}
-                                                    className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    className="mt-1 rounded border-gray-300 text-palm-green focus:ring-palm-green focus:ring-offset-0 w-4 h-4"
                                                 />
                                                 <div className="text-xs">
-                                                    <div className="font-medium text-gray-700">{service.name}</div>
+                                                    <div className="font-semibold text-gray-700">{service.name}</div>
                                                     <div className="text-gray-500">{service.path}</div>
                                                 </div>
                                             </label>
@@ -229,41 +229,41 @@ export default function EditUserModal({ user, services, onClose }: EditUserModal
                             </div>
 
                             <button type="submit" disabled={isLoading}
-                                className="w-full mt-6 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                                className="w-full mt-6 px-4 py-2.5 bg-palm-green text-white rounded-lg hover:bg-palm-green-hover transition-all text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed active:scale-95">
                                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4" /> Simpan Perubahan</>}
                             </button>
                         </form>
 
                         {/* Password Reset Section */}
                         <div className="w-full md:w-72 md:border-l md:pl-6 border-gray-200 pt-6 md:pt-0">
-                            <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                                <Key className="h-4 w-4" /> Reset Password
+                            <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <Key className="h-4 w-4 text-earth-brown" /> Reset Password
                             </h4>
 
                             {!showPasswordReset ? (
                                 <button onClick={() => setShowPasswordReset(true)}
-                                    className="w-full px-4 py-2 border border-yellow-500 text-yellow-700 rounded-lg hover:bg-yellow-50 text-sm transition-colors">
+                                    className="w-full px-4 py-2.5 border-2 border-earth-brown text-earth-brown rounded-lg hover:bg-earth-brown hover:text-white text-sm font-semibold transition-all active:scale-95">
                                     Ganti Password
                                 </button>
                             ) : (
-                                <div className="space-y-3 bg-yellow-50 p-4 rounded-lg">
+                                <div className="space-y-3 bg-amber-50 border-2 border-amber-200 p-4 rounded-lg">
                                     <div>
-                                        <label className="block text-xs font-medium text-yellow-800 mb-1">Password Baru</label>
+                                        <label className="block text-xs font-semibold text-gray-800 mb-1">Password Baru</label>
                                         <input
                                             type="password"
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
-                                            className="w-full rounded border border-yellow-300 px-2 py-1.5 text-sm"
+                                            className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent"
                                             placeholder="Min. 6 karakter"
                                         />
                                     </div>
                                     <div className="flex gap-2">
                                         <button onClick={onResetPass} disabled={isLoading}
-                                            className="flex-1 px-2 py-1.5 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700">
+                                            className="flex-1 px-3 py-2 bg-palm-green text-white rounded text-xs font-semibold hover:bg-palm-green-hover transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95">
                                             Simpan
                                         </button>
                                         <button onClick={() => setShowPasswordReset(false)}
-                                            className="flex-1 px-2 py-1.5 bg-white border border-gray-300 text-gray-600 rounded text-xs hover:bg-gray-50">
+                                            className="flex-1 px-3 py-2 bg-white border-2 border-gray-300 text-gray-600 rounded text-xs font-semibold hover:bg-gray-50 transition-all active:scale-95">
                                             Batal
                                         </button>
                                     </div>

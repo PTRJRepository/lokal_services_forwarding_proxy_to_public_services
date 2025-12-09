@@ -1,18 +1,34 @@
-import { auth, signOut } from '@/auth'
+import { cookies } from 'next/headers'
 import Image from 'next/image'
 import Link from 'next/link'
 import { LogOut, User, LayoutDashboard, Settings } from 'lucide-react'
+import { verifyToken } from '@/utils/jwt'
 
 export default async function AdminLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const session = await auth()
-    const user = session?.user
+    // Get JWT token from cookie - use await for Next.js 16
+    const cookieStore = await cookies()
+    const token = cookieStore.get('auth-token')?.value
+
+    let user = null
+    if (token) {
+        const payload = verifyToken(token)
+        if (payload) {
+            user = {
+                id: payload.userId,
+                name: payload.name,
+                email: payload.email,
+                role: payload.role,
+                image: null
+            }
+        }
+    }
 
     // Double check admin role here for layout security
-    if (user?.role !== 'ADMIN') {
+    if (!user || user.role !== 'ADMIN') {
         return (
             <div className="flex h-screen items-center justify-center bg-gray-50">
                 <div className="text-center">
@@ -58,15 +74,13 @@ export default async function AdminLayout({
                             <p className="text-xs text-gray-500 uppercase">{user?.role || 'Staf'}</p>
                         </div>
                     </div>
-                    <form action={async () => {
-                        'use server';
-                        await signOut({ redirectTo: '/login' });
-                    }}>
-                        <button className="flex w-full items-center px-4 py-2 mt-2 text-sm text-gray-500 hover:text-red-600 transition-colors">
-                            <LogOut className="w-4 h-4 mr-2" />
-                            Keluar
-                        </button>
-                    </form>
+                    <Link
+                        href="/api/auth/logout"
+                        className="flex w-full items-center px-4 py-2 mt-2 text-sm text-gray-500 hover:text-red-600 transition-colors"
+                    >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Keluar
+                    </Link>
                 </div>
             </aside>
 
