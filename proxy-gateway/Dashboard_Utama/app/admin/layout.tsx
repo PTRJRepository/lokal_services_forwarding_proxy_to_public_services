@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers'
 import Image from 'next/image'
 import Link from 'next/link'
-import { LogOut, User, LayoutDashboard, Settings } from 'lucide-react'
+import { User, LayoutDashboard, Settings } from 'lucide-react'
 import { verifyToken } from '@/utils/jwt'
+import LogoutButton from '@/components/LogoutButton'
 
 export default async function AdminLayout({
     children,
@@ -11,7 +12,9 @@ export default async function AdminLayout({
 }) {
     // Get JWT token from cookie - use await for Next.js 16
     const cookieStore = await cookies()
-    const token = cookieStore.get('auth-token')?.value
+    // Check both auth-token and legacy payroll_auth_token for consistency with middleware
+    const token = cookieStore.get('auth-token')?.value ||
+        cookieStore.get('payroll_auth_token')?.value
 
     let user = null
     if (token) {
@@ -74,13 +77,7 @@ export default async function AdminLayout({
                             <p className="text-xs text-gray-500 uppercase">{user?.role || 'Staf'}</p>
                         </div>
                     </div>
-                    <Link
-                        href="/api/auth/logout"
-                        className="flex w-full items-center px-4 py-2 mt-2 text-sm text-gray-500 hover:text-red-600 transition-colors"
-                    >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Keluar
-                    </Link>
+                    <LogoutButton />
                 </div>
             </aside>
 

@@ -16,7 +16,9 @@
       "mcp__obsidian-mcp-tools__list_vault_files",
       "mcp__obsidian-mcp-tools__search_vault_smart",
       "Bash(dir:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": []

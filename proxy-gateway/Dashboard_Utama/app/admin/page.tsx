@@ -21,7 +21,8 @@ async function getServices() {
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
     // Get JWT token from cookie - use await for Next.js 16
     const cookieStore = await cookies()
-    const token = cookieStore.get('auth-token')?.value
+    const token = cookieStore.get('auth-token')?.value ||
+                  cookieStore.get('payroll_auth_token')?.value
 
     // Await searchParams for Next.js 16
     const params = await searchParams
@@ -45,7 +46,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             console.log('Admin Page Debug: Token verification failed (payload is null)')
         }
     } else {
-        console.log('Admin Page Debug: No auth-token found in cookies')
+        console.log('Admin Page Debug: No auth-token or payroll_auth_token found in cookies')
     }
 
     // Check if user is admin

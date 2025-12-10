@@ -7,9 +7,10 @@ export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
     try {
-        // Get token from cookie or header
+        // Get token from cookie or header (support both auth-token and payroll_auth_token)
         const token = request.cookies.get('auth-token')?.value ||
-            request.headers.get('Authorization')?.replace('Bearer ', '')
+                     request.cookies.get('payroll_auth_token')?.value ||
+                     request.headers.get('Authorization')?.replace('Bearer ', '')
 
         if (!token) {
             return NextResponse.json(

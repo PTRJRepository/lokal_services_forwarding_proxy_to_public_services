@@ -2,7 +2,8 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/utils/jwt'
 import { serviceRepository } from '@/utils/service-repository'
 import Link from 'next/link'
-import { ExternalLink, Server, Settings, LogOut, Shield } from 'lucide-react'
+import { ExternalLink, Server, Settings, Shield } from 'lucide-react'
+import LogoutButton from '@/components/LogoutButton'
 
 // Force Node.js runtime
 export const runtime = 'nodejs'
@@ -12,7 +13,8 @@ const GATEWAY_BASE_URL = 'http://localhost:3001'
 
 export default async function DashboardUserPage() {
     const cookieStore = await cookies()
-    const token = cookieStore.get('auth-token')?.value
+    const token = cookieStore.get('auth-token')?.value ||
+        cookieStore.get('payroll_auth_token')?.value
 
     let user = null
     if (token) {
@@ -76,13 +78,7 @@ export default async function DashboardUserPage() {
                                     Admin Panel
                                 </Link>
                             )}
-                            <Link
-                                href="/api/auth/logout"
-                                className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                Logout
-                            </Link>
+                            <LogoutButton variant="header" />
                         </div>
                     </div>
                 </div>

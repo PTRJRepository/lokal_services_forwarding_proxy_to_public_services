@@ -36,12 +36,19 @@ console.log(`📡 Fallback Host: ${process.env.BACKEND_HOST_FALLBACK || 'localho
 const next = require('./Dashboard_Utama/node_modules/next');
 
 const dev = process.env.NODE_ENV !== 'production';
-// Point to the Next.js app directory
-const nextApp = next({ dev, dir: path.join(__dirname, 'Dashboard_Utama') });
+const PORT = process.env.PORT || 3001;
+
+// Configure Next.js with the correct host and port
+// This ensures that Next.js RSC/prefetch requests use the correct URL
+const nextApp = next({
+    dev,
+    dir: path.join(__dirname, 'Dashboard_Utama'),
+    hostname: 'localhost',
+    port: Number(PORT)
+});
 const nextHandle = nextApp.getRequestHandler();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 // Determine which config file to use based on environment
 const CONFIG_FILE = path.join(__dirname, `routes-config.${env}.json`);
