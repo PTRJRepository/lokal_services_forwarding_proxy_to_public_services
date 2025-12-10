@@ -37,11 +37,18 @@ export async function POST(request: NextRequest) {
             token: result.token // Also return token for API usage
         })
 
+        // Set cookie - FOR LOCALHOST ALWAYS USE HTTP
+        // Don't set explicit domain - let browser set it automatically
+        // This ensures maximum compatibility across different environments
+        console.log('🍪 Setting auth-token cookie, token length:', result.token?.length)
         response.cookies.set('auth-token', result.token!, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 60 * 60 * 8 // 8 hours
+            httpOnly: false, // Allow client-side access for localStorage sync
+            secure: false, // MUST be false for HTTP localhost
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 8, // 8 hours
+            path: '/'
+            // NOTE: Do NOT set 'domain' - this can cause cookie issues
+            // Browser will automatically use the current domain
         })
 
         return response
