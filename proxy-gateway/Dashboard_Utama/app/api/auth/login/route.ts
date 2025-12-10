@@ -9,7 +9,10 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { email, password } = body
 
+        console.log('🔐 Login attempt:', { email, passwordLength: password?.length })
+
         if (!email || !password) {
+            console.log('❌ Login failed: Missing email or password')
             return NextResponse.json(
                 { error: 'Email dan password harus diisi' },
                 { status: 400 }
@@ -17,8 +20,10 @@ export async function POST(request: NextRequest) {
         }
 
         const result = await authenticateUser(email, password)
+        console.log('🔐 Auth result:', { success: result.success, error: result.error, userId: result.user?.id })
 
         if (!result.success) {
+            console.log('❌ Login failed for:', email, '- Reason:', result.error)
             return NextResponse.json(
                 { error: result.error },
                 { status: 401 }
