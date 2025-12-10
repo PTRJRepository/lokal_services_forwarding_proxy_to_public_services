@@ -14,7 +14,10 @@ export interface AuthResult {
  */
 export async function authenticateUser(email: string, password: string): Promise<AuthResult> {
     try {
+        console.log('🔍 Looking up user:', email)
         const user = await userRepository.verifyPassword(email, password)
+
+        console.log('🔍 User lookup result:', user ? { id: user.id, email: user.email, role: user.role } : 'NOT FOUND')
 
         if (!user) {
             return { success: false, error: 'Email atau password salah' }
@@ -27,6 +30,7 @@ export async function authenticateUser(email: string, password: string): Promise
             name: user.name,
             role: user.role
         })
+        console.log('✅ Token generated for user:', user.id)
 
         // Return user without password
         const { password: _, ...userWithoutPassword } = user

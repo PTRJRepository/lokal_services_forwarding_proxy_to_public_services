@@ -130,9 +130,13 @@ export class UserRepository {
      */
     async verifyPassword(email: string, password: string): Promise<User | null> {
         const user = await this.findByEmail(email)
+        console.log('🔐 verifyPassword - User found:', user ? { id: user.id, email: user.email } : 'NOT FOUND')
+
         if (!user) return null
 
         const isValid = await bcrypt.compare(password, user.password)
+        console.log('🔐 verifyPassword - Password valid:', isValid)
+
         return isValid ? user : null
     }
 
