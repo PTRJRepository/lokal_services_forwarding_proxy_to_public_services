@@ -8,9 +8,6 @@ import LogoutButton from '@/components/LogoutButton'
 // Force Node.js runtime
 export const runtime = 'nodejs'
 
-// Base URL for proxy gateway services
-const GATEWAY_BASE_URL = 'http://localhost:3001'
-
 export default async function DashboardUserPage() {
     const cookieStore = await cookies()
     const token = cookieStore.get('auth-token')?.value ||
@@ -96,9 +93,7 @@ export default async function DashboardUserPage() {
                         {services.map((service) => (
                             <a
                                 key={service.serviceId}
-                                href={`${GATEWAY_BASE_URL}${service.path || `/${service.serviceId}`}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                href={service.path || `/${service.serviceId}`}
                                 className="group bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-xl hover:border-palm-green/30 hover:-translate-y-1 transition-all duration-300"
                             >
                                 <div className="flex items-start justify-between">
