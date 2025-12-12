@@ -77,8 +77,8 @@ export default function Home() {
                 Visi
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Menjadi perusahaan perkebunan kelapa sawit terkemuka yang produktif, efisien, dan berkelanjutan,
-                serta memberikan nilai tambah bagi seluruh pemangku kepentingan.
+                PT. Rebinmas Jaya berkomitmen untuk memproduksi CPO dan Kernel berkwalitas yang berkesinambungan,
+                dengan managemen yang professional didukung karyawan yang berdedikasi.
               </p>
             </div>
 
@@ -91,19 +91,19 @@ export default function Home() {
               <ul className="text-gray-600 leading-relaxed space-y-3">
                 <li className="flex items-start gap-2">
                   <span className="text-palm-green font-bold">1.</span>
-                  Menjalankan praktik agronomi terbaik untuk mencapai produktivitas tinggi.
+                  Melakukan kegiatan usaha yang berwawasan lingkungan dan berkelanjutan.
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-palm-green font-bold">2.</span>
-                  Menerapkan standar keberlanjutan (ISPO) dalam setiap lini operasional.
+                  Menghasilkan produksi berkwalitas tinggi.
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-palm-green font-bold">3.</span>
-                  Membangun kemitraan yang harmonis dengan masyarakat melalui program Plasma dan CSR.
+                  Mendorong Pembelajaran secara terus menerus dan perbaikan dalam penerapannya.
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-palm-green font-bold">4.</span>
-                  Meningkatkan kesejahteraan karyawan dan lingkungan kerja yang aman (K3).
+                  Menjadikan suatu perusahaan yang bertanggung jawab kepada masyarakat sekitar.
                 </li>
               </ul>
             </div>
@@ -129,9 +129,10 @@ export default function Home() {
               <h3 className="text-xl font-bold mb-2">Parit Gunung Estate</h3>
               <p className="text-white/80 text-sm mb-4">Kecamatan Badau, Belitung</p>
               <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">PG 1A</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">PG 2A</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">PG 2B</span>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">1A</span>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">1B</span>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">2A</span>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">2B</span>
               </div>
             </div>
 
@@ -158,9 +159,9 @@ export default function Home() {
               <h3 className="text-xl font-bold mb-2">Darul Makmur Estate</h3>
               <p className="text-white/80 text-sm mb-4">Kabupaten Belitung</p>
               <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">Pelepak Pute</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">Sungai Padang</span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">Cendil</span>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">Air Raya</span>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">Kandis</span>
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs">Cendong</span>
               </div>
             </div>
           </div>

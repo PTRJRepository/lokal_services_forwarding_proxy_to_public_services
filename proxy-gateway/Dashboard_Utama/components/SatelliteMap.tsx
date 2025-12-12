@@ -5,27 +5,21 @@ import { useEffect, useRef, useState } from 'react'
 // Estate locations
 const estates = [
     {
-        name: 'Kantor Pusat & Pabrik',
-        position: [-2.8167, 107.7500] as [number, number],
-        description: 'Dusun Parit Gunung, Desa Air Batu Buding, Kecamatan Badau',
+        name: 'Kantor Pusat / Induk Rebinmas Jaya (Parit Gunung)',
+        position: [-2.7412499297005497, 107.88343331898686] as [number, number],
+        description: 'Kantor Pusat PT Rebinmas Jaya',
         type: 'office'
     },
     {
-        name: 'Parit Gunung Estate',
-        position: [-2.8200, 107.7600] as [number, number],
-        description: 'PG 1A, PG 2A, PG 2B',
-        type: 'estate'
-    },
-    {
         name: 'Air Ruak Estate',
-        position: [-2.7800, 107.8200] as [number, number],
-        description: 'ARE A, ARE B1, ARE B2, ARE C',
+        position: [-2.8226592062084985, 107.89119926420152] as [number, number],
+        description: 'Kantor Air Ruak Estate',
         type: 'estate'
     },
     {
-        name: 'Darul Makmur Estate',
-        position: [-2.8500, 107.9000] as [number, number],
-        description: 'Pelepak Pute, Sungai Padang, Cendil',
+        name: 'Darul Makmur Estate (DME)',
+        position: [-2.6434984396258683, 107.86948716050739] as [number, number],
+        description: 'Air Raya, Kandis, Cendong',
         type: 'estate'
     },
 ]
@@ -63,7 +57,7 @@ export default function SatelliteMap() {
 
                 if (mapRef.current && !mapInstanceRef.current) {
                     // Create map
-                    const map = L.map(mapRef.current).setView([-2.82, 107.80], 11)
+                    const map = L.map(mapRef.current).setView([-2.74, 107.88], 11)
 
                     // Add satellite tile layer
                     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {

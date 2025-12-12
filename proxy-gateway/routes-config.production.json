@@ -2,7 +2,7 @@
     {
         "id": "upah",
         "path": "/upah",
-        "target": "http://localhost:5175",
+        "target": "http://localhost:5175/",
         "description": "Sistem Penggajian/Payroll",
         "enabled": true,
         "rewriteContent": true,
