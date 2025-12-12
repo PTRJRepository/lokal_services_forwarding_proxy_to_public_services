@@ -160,12 +160,21 @@ function getProxyMiddleware(route) {
 
             onError: (err, req, res) => {
                 console.error(`❌ Proxy error for ${route.path}:`, err.message);
-                if (!res.headersSent) {
+                // res might not be an Express response (e.g., during WebSocket upgrade)
+                if (res && typeof res.status === 'function' && !res.headersSent) {
                     res.status(502).json({
                         error: 'Proxy Error',
                         message: `Backend service at ${route.target} is not reachable`,
                         details: err.message
                     });
+                } else if (res && typeof res.writeHead === 'function' && !res.headersSent) {
+                    // Raw HTTP response
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        error: 'Proxy Error',
+                        message: `Backend service at ${route.target} is not reachable`,
+                        details: err.message
+                    }));
                 }
             },
             onProxyReq: (proxyReq, req, res) => {
@@ -574,14 +583,34 @@ nextApp.prepare().then(() => {
     server.on('upgrade', (req, socket, head) => {
         const reqPath = req.url;
         console.log(`🔌 WebSocket upgrade: ${reqPath}`);
+        console.log(`🔌 Headers - Origin: ${req.headers.origin}, Referer: ${req.headers.referer}`);
 
         const sortedRoutes = [...routes].sort((a, b) => b.path.length - a.path.length);
         let matchedRoute = sortedRoutes.find(r => r.enabled && reqPath.startsWith(r.path));
 
-        // WebSocket HMR requests might come as relative paths
-        // Check if the origin header contains a route path
-        if (!matchedRoute && req.headers.origin) {
-            matchedRoute = sortedRoutes.find(r => r.enabled && req.headers.origin.includes(r.path));
+        // WebSocket HMR requests might come as relative paths (e.g., /?token=xxx)
+        // Check multiple headers to find the originating route
+        if (!matchedRoute) {
+            // Check origin header
+            if (req.headers.origin) {
+                matchedRoute = sortedRoutes.find(r => r.enabled && req.headers.origin.includes(r.path));
+            }
+
+            // Check referer header (Vite HMR often uses this)
+            if (!matchedRoute && req.headers.referer) {
+                matchedRoute = sortedRoutes.find(r => r.enabled && req.headers.referer.includes(r.path));
+            }
+
+            // For Vite: if request is to root (/?token=...) and we have enabled routes with rewriteContent,
+            // use the first one that targets a dev server (common Vite ports)
+            if (!matchedRoute && (reqPath === '/' || reqPath.startsWith('/?'))) {
+                matchedRoute = sortedRoutes.find(r =>
+                    r.enabled &&
+                    r.rewriteContent === true &&
+                    (r.target.includes(':5173') || r.target.includes(':5174') || r.target.includes(':5175') || r.target.includes(':5176') || r.target.includes(':5177'))
+                );
+            }
+
             if (matchedRoute) {
                 console.log(`🔌 WebSocket HMR request detected for ${matchedRoute.path}: ${reqPath}`);
             }
