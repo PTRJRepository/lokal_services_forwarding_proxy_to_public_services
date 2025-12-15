@@ -3,8 +3,8 @@
         "id": "upah",
         "path": "/upah",
         "target": "http://localhost:5175/",
-        "description": "Sistem Penggajian/Payroll",
-        "enabled": true,
+        "description": "Sistem Penggajian/Payroll (Static dari dist folder)",
+        "enabled": false,
         "rewriteContent": true,
         "image": "https://broadwayshr.com/wp-content/uploads/2024/02/upah-lembur-per-jam-cover.jpg"
     },

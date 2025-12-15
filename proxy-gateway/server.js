@@ -129,6 +129,91 @@ app.get('/config-path', (req, res) => {
 });
 
 // ============================================
+// SERVE UPAH FRONTEND FROM DIST FOLDER
+// Static serving untuk frontend yang sudah di-build
+// ============================================
+
+const upahDistPath = path.join(__dirname, 'Services', 'upah', 'dist');
+
+// Daftar path yang termasuk dalam upah app (tanpa prefix /upah)
+// Jika ada path baru di frontend, tambahkan di sini
+const UPAH_APP_PATHS = [
+    '/payroll',
+    '/employee',
+    '/report',
+    '/locked',
+    '/login'  // jika ada login page di upah app
+];
+
+// Check if dist folder exists
+if (fs.existsSync(upahDistPath)) {
+    console.log(`✅ Found upah dist folder: ${upahDistPath}`);
+
+    // Serve static assets from root paths (untuk kompatibilitas dengan frontend yang tidak di-build dengan base path)
+    // /images/* -> serve from dist/images
+    app.use('/images', express.static(path.join(upahDistPath, 'images')));
+
+    // Redirect paths yang termasuk upah app tapi diakses tanpa prefix /upah
+    app.use((req, res, next) => {
+        const reqPath = req.path;
+
+        // Check if path matches any upah app paths (without /upah prefix)
+        const isUpahPath = UPAH_APP_PATHS.some(p => reqPath.startsWith(p));
+
+        if (isUpahPath) {
+            // Redirect to /upah prefixed path
+            const newPath = '/upah' + reqPath + (req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '');
+            console.log(`🔄 Redirecting upah path: ${reqPath} -> ${newPath}`);
+            return res.redirect(302, newPath);
+        }
+
+        next();
+    });
+
+    // Serve static assets (JS, CSS, images, etc.) from dist folder with /upah prefix
+    app.use('/upah/assets', express.static(path.join(upahDistPath, 'assets')));
+    app.use('/upah/images', express.static(path.join(upahDistPath, 'images')));
+    app.use('/upah/vite.svg', express.static(path.join(upahDistPath, 'vite.svg')));
+
+    // Serve index.html with rewritten paths for all /upah routes
+    app.get('/upah', (req, res) => {
+        serveUpahIndex(req, res);
+    });
+
+    app.get('/upah/*', (req, res, next) => {
+        // Skip if requesting a static file with extension
+        const extPattern = /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|json|webp)$/;
+        if (extPattern.test(req.path)) {
+            return next();
+        }
+
+        // For SPA routes, serve index.html
+        serveUpahIndex(req, res);
+    });
+
+    function serveUpahIndex(req, res) {
+        const indexPath = path.join(upahDistPath, 'index.html');
+        console.log(`📄 Serving upah index.html for path: ${req.path}`);
+
+        fs.readFile(indexPath, 'utf8', (err, html) => {
+            if (err) {
+                console.error('❌ Error reading upah index.html:', err);
+                return res.status(500).send('Internal Server Error');
+            }
+
+            // Dist sudah di-build dengan base: '/upah/' di vite.config.js
+            // dan basename="/upah" di React Router, jadi tidak perlu rewrite
+
+            res.setHeader('Content-Type', 'text/html');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.send(html);
+        });
+    }
+} else {
+    console.log(`⚠️ Upah dist folder not found at: ${upahDistPath}`);
+}
+
+// ============================================
 // PROXY MIDDLEWARE CACHE
 // ============================================
 
