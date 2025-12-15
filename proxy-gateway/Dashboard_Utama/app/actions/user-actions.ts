@@ -116,3 +116,35 @@ export async function fetchUserServices(userId: number): Promise<string[]> {
         return []
     }
 }
+
+export async function changePassword(
+    userId: number,
+    oldPassword: string,
+    newPassword: string
+): Promise<ActionState> {
+    try {
+        // Get user by ID
+        const user = await userRepository.findById(userId)
+        if (!user) {
+            return { success: false, error: 'User tidak ditemukan' }
+        }
+
+        // Verify old password
+        const verified = await userRepository.verifyPassword(user.email, oldPassword)
+        if (!verified) {
+            return { success: false, error: 'Password lama tidak sesuai' }
+        }
+
+        // Validate new password
+        if (newPassword.length < 6) {
+            return { success: false, error: 'Password baru minimal 6 karakter' }
+        }
+
+        // Update to new password
+        await userRepository.update(userId, { password: newPassword })
+        return { success: true, message: 'Password berhasil diubah' }
+    } catch (error) {
+        console.error('Change password error:', error)
+        return { success: false, error: 'Gagal mengubah password' }
+    }
+}

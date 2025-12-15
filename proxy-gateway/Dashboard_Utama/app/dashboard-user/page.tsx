@@ -4,6 +4,7 @@ import { serviceRepository } from '@/utils/service-repository'
 import Link from 'next/link'
 import { ExternalLink, Server, Settings, Shield } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
+import ChangePasswordButton from '@/components/ChangePasswordButton'
 
 // Force Node.js runtime
 export const runtime = 'nodejs'
@@ -66,6 +67,7 @@ export default async function DashboardUserPage() {
                                 <Shield className="w-4 h-4" />
                                 {user.role}
                             </div>
+                            <ChangePasswordButton userId={Number(user.id)} />
                             {user.role === 'ADMIN' && (
                                 <Link
                                     href="/admin"
