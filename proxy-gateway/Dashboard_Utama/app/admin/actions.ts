@@ -11,6 +11,7 @@ export async function createUser(formData: FormData) {
     const password = formData.get('password') as string
     const role = formData.get('role') as string
     const divisi = formData.get('divisi') as string
+    const gang = formData.get('gang') as string
 
     // Validate required fields
     if (!name || !email || !password || !role) {
@@ -42,7 +43,7 @@ export async function createUser(formData: FormData) {
         }
 
         // Create user using repository
-        const newUser = await userRepository.create({ name, email, password, role, divisi })
+        const newUser = await userRepository.create({ name, email, password, role, divisi, gang })
 
         // Assign services if provided
         // formData.getAll('services') returns an array of strings (service IDs)
@@ -74,6 +75,7 @@ export async function updateUser(userId: string, formData: FormData) {
     const email = formData.get('email') as string
     const role = formData.get('role') as string
     const divisi = formData.get('divisi') as string
+    const gang = formData.get('gang') as string
     const password = formData.get('password') as string
     const serviceIds = formData.getAll('services') as string[] // Get services
 
@@ -106,7 +108,7 @@ export async function updateUser(userId: string, formData: FormData) {
         }
 
         // Update user data
-        const updateData: any = { name, email, role, divisi }
+        const updateData: any = { name, email, role, divisi, gang }
         if (password) {
             updateData.password = password
         }

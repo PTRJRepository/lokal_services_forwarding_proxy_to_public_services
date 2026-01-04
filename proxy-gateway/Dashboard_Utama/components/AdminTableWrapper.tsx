@@ -12,6 +12,7 @@ interface User {
     email: string
     role: string
     divisi?: string
+    plainPassword?: string
 }
 
 interface Service {

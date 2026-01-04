@@ -137,12 +137,12 @@ const upahDistPath = path.join(__dirname, 'Services', 'upah', 'dist');
 
 // Daftar path yang termasuk dalam upah app (tanpa prefix /upah)
 // Jika ada path baru di frontend, tambahkan di sini
+// CATATAN: /login TIDAK termasuk karena itu adalah login page dashboard utama di :3001/login
 const UPAH_APP_PATHS = [
     '/payroll',
     '/employee',
     '/report',
-    '/locked',
-    '/login'  // jika ada login page di upah app
+    '/locked'
 ];
 
 // Check if dist folder exists

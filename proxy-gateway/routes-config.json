@@ -22,5 +22,13 @@
         "description": "Monitoring Distribusi Beras",
         "enabled": true,
         "rewriteContent": true
-    }
+    },
+    {
+        "id": "query",
+    "path": "/query",
+    "target": "http://localhost:8001",
+    "description": "SQL Gateway API",
+    "enabled": true,
+    "rewriteContent": false
+}
 ]

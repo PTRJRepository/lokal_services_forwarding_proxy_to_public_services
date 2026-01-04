@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { db } from './db'
+import { encryptPassword, decryptPassword } from './password-encryption'
 
 // User interface
 export interface User {
@@ -7,13 +8,18 @@ export interface User {
     name: string
     email: string
     password: string
+    plainPassword?: string
     role: string
     divisi?: string
+    gang?: string
     createdAt: Date
     updatedAt?: Date
 }
 
 export type UserWithoutPassword = Omit<User, 'password'>
+
+// User with plainPassword for admin view
+export type UserWithPlainPassword = Omit<User, 'password'> & { plainPassword?: string }
 
 /**
  * User Repository - handles all user database operations
@@ -41,29 +47,46 @@ export class UserRepository {
     }
 
     /**
-     * Get all users (without passwords)
+     * Get all users (without hashed passwords)
      */
     async findAll(): Promise<UserWithoutPassword[]> {
         return db.query<UserWithoutPassword>(
-            'SELECT id, name, email, role, divisi, createdAt, updatedAt FROM user_ptrj ORDER BY createdAt DESC'
+            'SELECT id, name, email, role, divisi, gang, createdAt, updatedAt FROM user_ptrj ORDER BY createdAt DESC'
         )
+    }
+
+    /**
+     * Get all users with decrypted plainPassword (for admin view only)
+     */
+    async findAllWithPlainPassword(): Promise<UserWithPlainPassword[]> {
+        const users = await db.query<UserWithPlainPassword>(
+            'SELECT id, name, email, role, divisi, gang, plainPassword, createdAt, updatedAt FROM user_ptrj ORDER BY createdAt DESC'
+        )
+
+        // Decrypt passwords for admin view
+        return users.map(user => ({
+            ...user,
+            plainPassword: user.plainPassword ? decryptPassword(user.plainPassword) || undefined : undefined
+        }))
     }
 
     /**
      * Create new user
      */
-    async create(data: { name: string; email: string; password: string; role: string; divisi?: string }): Promise<User | null> {
+    async create(data: { name: string; email: string; password: string; role: string; divisi?: string; gang?: string }): Promise<User | null> {
         const hashedPassword = await bcrypt.hash(data.password, 10)
 
         await db.execute(
-            `INSERT INTO user_ptrj (name, email, password, role, divisi)
-             VALUES (@name, @email, @password, @role, @divisi)`,
+            `INSERT INTO user_ptrj (name, email, password, plainPassword, role, divisi, gang)
+             VALUES (@name, @email, @password, @plainPassword, @role, @divisi, @gang)`,
             {
                 name: data.name,
                 email: data.email,
                 password: hashedPassword,
+                plainPassword: encryptPassword(data.password), // Encrypt password for secure storage
                 role: data.role,
-                divisi: data.divisi || null
+                divisi: data.divisi || null,
+                gang: data.gang || null
             }
         )
 
@@ -73,7 +96,7 @@ export class UserRepository {
     /**
      * Update user
      */
-    async update(id: number, data: Partial<{ name: string; email: string; role: string; divisi?: string; password?: string }>): Promise<boolean> {
+    async update(id: number, data: Partial<{ name: string; email: string; role: string; divisi?: string; gang?: string; password?: string }>): Promise<boolean> {
         const sets: string[] = []
         const params: Record<string, any> = { id }
 
@@ -93,10 +116,16 @@ export class UserRepository {
             sets.push('divisi = @divisi')
             params.divisi = data.divisi
         }
+        if (data.gang !== undefined) {
+            sets.push('gang = @gang')
+            params.gang = data.gang
+        }
         if (data.password) {
             const hashedPassword = await bcrypt.hash(data.password, 10)
             sets.push('password = @password')
+            sets.push('plainPassword = @plainPassword')
             params.password = hashedPassword
+            params.plainPassword = encryptPassword(data.password) // Encrypt password for secure storage
         }
 
         if (sets.length === 0) return false

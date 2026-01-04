@@ -11,7 +11,7 @@ import Link from 'next/link'
 export const runtime = 'nodejs'
 
 async function getUsers() {
-    return await userRepository.findAll()
+    return await userRepository.findAllWithPlainPassword()
 }
 
 async function getServices() {
@@ -22,7 +22,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     // Get JWT token from cookie - use await for Next.js 16
     const cookieStore = await cookies()
     const token = cookieStore.get('auth-token')?.value ||
-                  cookieStore.get('payroll_auth_token')?.value
+        cookieStore.get('payroll_auth_token')?.value
 
     // Await searchParams for Next.js 16
     const params = await searchParams

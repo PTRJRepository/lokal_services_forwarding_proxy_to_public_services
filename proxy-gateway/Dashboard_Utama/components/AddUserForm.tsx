@@ -1,7 +1,8 @@
 'use client'
 
 import { createUser } from '@/app/admin/actions'
-import { useRef, useState } from 'react'
+import { fetchGangs, type GangItem } from '@/app/actions/gang-actions'
+import { useRef, useState, useEffect } from 'react'
 import { X, UserPlus, Loader2 } from 'lucide-react'
 
 interface Service {
@@ -24,6 +25,12 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
     // Services selection state
     const [selectedServices, setSelectedServices] = useState<string[]>([])
 
+    // Divisi and Gang state
+    const [selectedDivisi, setSelectedDivisi] = useState('')
+    const [selectedGang, setSelectedGang] = useState('')
+    const [gangs, setGangs] = useState<GangItem[]>([])
+    const [isLoadingGangs, setIsLoadingGangs] = useState(false)
+
     const divisOptions = [
         { value: '', label: 'Pilih Divisi', disabled: true },
         { value: 'ALL', label: 'ALL (Semua Kerani)', disabled: false },
@@ -32,6 +39,21 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
         { value: 'PGE 2A', label: 'PGE 2A', disabled: false },
         { value: 'PGE 2B', label: 'PGE 2B', disabled: false }
     ]
+
+    // Fetch gangs when divisi changes
+    useEffect(() => {
+        if (selectedRole === 'KERANI' && selectedDivisi) {
+            setIsLoadingGangs(true)
+            setSelectedGang('')
+            fetchGangs(selectedDivisi)
+                .then(setGangs)
+                .catch(() => setGangs([]))
+                .finally(() => setIsLoadingGangs(false))
+        } else {
+            setGangs([])
+            setSelectedGang('')
+        }
+    }, [selectedDivisi, selectedRole])
 
     const handleServiceToggle = (serviceId: string) => {
         setSelectedServices(prev =>
@@ -192,6 +214,8 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
                                 <select
                                     name="divisi"
                                     required={selectedRole === 'KERANI'}
+                                    value={selectedDivisi}
+                                    onChange={(e) => setSelectedDivisi(e.target.value)}
                                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
                                 >
                                     {divisOptions.map((option) => (
@@ -205,6 +229,35 @@ export default function AddUserForm({ onClose, services }: AddUserFormProps) {
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+                        )}
+
+                        {selectedRole === 'KERANI' && selectedDivisi && (
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                                    Gang/Kemandoran
+                                </label>
+                                {isLoadingGangs ? (
+                                    <div className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-500 bg-gray-50 flex items-center gap-2">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Memuat gang...
+                                    </div>
+                                ) : (
+                                    <select
+                                        name="gang"
+                                        value={selectedGang}
+                                        onChange={(e) => setSelectedGang(e.target.value)}
+                                        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all"
+                                    >
+                                        <option value="" className="text-gray-400">Pilih Gang (opsional)</option>
+                                        {gangs.map((gang) => (
+                                            <option key={gang.code} value={gang.code} className="text-gray-900">
+                                                {gang.code} - {gang.description}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">Kosongkan jika user dapat akses semua gang di divisi ini</p>
                             </div>
                         )}
 

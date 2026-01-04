@@ -1,6 +1,7 @@
 'use client'
 
 import { updateUser, fetchUserServices, resetUserPassword } from '@/app/admin/actions'
+import { fetchGangs, type GangItem } from '@/app/actions/gang-actions'
 import { useEffect, useState } from 'react'
 import { X, Loader2, Save, Key } from 'lucide-react'
 
@@ -16,6 +17,7 @@ interface User {
     email: string
     role: string
     divisi?: string
+    gang?: string
 }
 
 interface EditUserModalProps {
@@ -32,6 +34,9 @@ export default function EditUserModal({ user, services, onClose }: EditUserModal
     // Form state
     const [role, setRole] = useState(user.role)
     const [divisi, setDivisi] = useState(user.divisi || '')
+    const [gang, setGang] = useState(user.gang || '')
+    const [gangs, setGangs] = useState<GangItem[]>([])
+    const [isLoadingGangs, setIsLoadingGangs] = useState(false)
     const [selectedServices, setSelectedServices] = useState<string[]>([])
     const [isLoadingServices, setIsLoadingServices] = useState(true)
 
@@ -63,6 +68,24 @@ export default function EditUserModal({ user, services, onClose }: EditUserModal
         }
         loadServices()
     }, [user.id])
+
+    // Fetch gangs when divisi changes
+    useEffect(() => {
+        if (role === 'KERANI' && divisi) {
+            setIsLoadingGangs(true)
+            // Only reset gang if divisi actually changed from original
+            if (divisi !== user.divisi) {
+                setGang('')
+            }
+            fetchGangs(divisi)
+                .then(setGangs)
+                .catch(() => setGangs([]))
+                .finally(() => setIsLoadingGangs(false))
+        } else {
+            setGangs([])
+            setGang('')
+        }
+    }, [divisi, role, user.divisi])
 
     const handleServiceToggle = (serviceId: string) => {
         setSelectedServices(prev =>
@@ -203,7 +226,28 @@ export default function EditUserModal({ user, services, onClose }: EditUserModal
                                 </div>
                             )}
 
-                            {/* Service Selection */}
+                            {role === 'KERANI' && divisi && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-800 mb-1">Gang/Kemandoran</label>
+                                    {isLoadingGangs ? (
+                                        <div className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-500 bg-gray-50 flex items-center gap-2">
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Memuat gang...
+                                        </div>
+                                    ) : (
+                                        <select name="gang" value={gang} onChange={(e) => setGang(e.target.value)}
+                                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 bg-gray-50 focus:ring-2 focus:ring-palm-green focus:border-transparent transition-all">
+                                            <option value="" className="text-gray-400">Pilih Gang (opsional)</option>
+                                            {gangs.map((g) => (
+                                                <option key={g.code} value={g.code} className="text-gray-900">
+                                                    {g.code} - {g.description}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                    <p className="text-xs text-gray-500 mt-1">Kosongkan jika user dapat akses semua gang di divisi ini</p>
+                                </div>
+                            )}
                             <div className="mt-6">
                                 <h4 className="text-sm font-semibold text-gray-800 mb-3 block">Hak Akses Layanan</h4>
                                 {isLoadingServices ? (
