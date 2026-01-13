@@ -14,7 +14,7 @@ const ROLES = ['ADMIN', 'KERANI', 'MNGR', 'ASISTEN', 'MANDOR'] // Add other role
 
 export default function PermissionsTable({ services, permissions }: PermissionsTableProps) {
     const [isPending, startTransition] = useTransition()
-    ion[] > (permissions)
+    const [optimisticPermissions, setOptimisticPermissions] = useState<RolePermission[]>(permissions)
 
     const hasPermission = (role: string, serviceId: string) => {
         return optimisticPermissions.some(p => p.role === role && p.serviceId === serviceId)
@@ -93,8 +93,8 @@ export default function PermissionsTable({ services, permissions }: PermissionsT
                                                 onClick={() => handleToggle(role, service.serviceId)}
                                                 disabled={isPending}
                                                 className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 ${access
-                                                    ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200 shadow-sm'
-                                                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+                                                        ? 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200 shadow-sm'
+                                                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
                                                     }`}
                                             >
                                                 {access ? <Check className="w-5 h-5" /> : <X className="w-4 h-4" />}
