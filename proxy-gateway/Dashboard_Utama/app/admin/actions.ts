@@ -11,7 +11,6 @@ export async function createUser(formData: FormData) {
     const password = formData.get('password') as string
     const role = formData.get('role') as string
     const divisi = formData.get('divisi') as string
-    const gang = formData.get('gang') as string
 
     // Validate required fields
     if (!name || !email || !password || !role) {
@@ -43,7 +42,7 @@ export async function createUser(formData: FormData) {
         }
 
         // Create user using repository
-        const newUser = await userRepository.create({ name, email, password, role, divisi, gang })
+        const newUser = await userRepository.create({ name, email, password, role, divisi })
 
         // Assign services if provided
         // formData.getAll('services') returns an array of strings (service IDs)
@@ -75,7 +74,6 @@ export async function updateUser(userId: string, formData: FormData) {
     const email = formData.get('email') as string
     const role = formData.get('role') as string
     const divisi = formData.get('divisi') as string
-    const gang = formData.get('gang') as string
     const password = formData.get('password') as string
     const serviceIds = formData.getAll('services') as string[] // Get services
 
@@ -108,7 +106,7 @@ export async function updateUser(userId: string, formData: FormData) {
         }
 
         // Update user data
-        const updateData: any = { name, email, role, divisi, gang }
+        const updateData: any = { name, email, role, divisi }
         if (password) {
             updateData.password = password
         }
@@ -116,25 +114,6 @@ export async function updateUser(userId: string, formData: FormData) {
         const success = await userRepository.update(parseInt(userId), updateData)
 
         if (success) {
-            // Update assigned services
-            // If services are provided (even empty list if form sends existing ones), update them.
-            // Client must ensure to send all selected services.
-            // But wait, if we are just editing profile without services, formData might be missing 'services'.
-            // We need a way to know if services were intended to be updated.
-            // Let's assume if it's sent, we update. If not sent?
-            // If checkboxes are unchecked, formData sends nothing? 
-            // Usually we submit the whole form state.
-            // Let's assume the Edit User Form will always include the services selection state.
-            // If simple profile update, maybe we shouldn't touch services.
-            // But having a single 'updateUser' that handles everything is cleaner if the UI supports it.
-
-            // For now, let's explicitely check if 'updateServices' flag is present or assume services are always sent if we are editing user rights.
-
-            // Let's assume we ALWAYS update services if the user ID matches, OR we check if 'services' is present.
-            // BUT: formData.getAll('services') returns [] if empty.
-            // We can't distinguish between "no services selected" and "field not present".
-            // We should add a hidden field "updateServices" = "true" to the form.
-
             const shouldUpdateServices = formData.get('updateServices') === 'true'
 
             if (shouldUpdateServices) {
@@ -190,6 +169,7 @@ export async function addService(formData: FormData) {
     const description = formData.get('description') as string
     const serviceUrl = formData.get('serviceUrl') as string
     const path = formData.get('path') as string
+    const imagePath = formData.get('imagePath') as string // Add imagePath support
 
     if (!serviceId || !name || !serviceUrl) {
         return { error: 'Service ID, Nama, dan URL harus diisi' }
@@ -202,7 +182,8 @@ export async function addService(formData: FormData) {
             description: description || '',
             serviceUrl,
             path: path || undefined,
-            enabled: true
+            enabled: true,
+            imagePath: imagePath || null
         })
 
         revalidatePath('/admin')

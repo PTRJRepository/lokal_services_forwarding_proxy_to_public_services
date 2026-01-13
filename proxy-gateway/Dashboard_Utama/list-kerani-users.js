@@ -1,76 +1,99 @@
 /**
  * Script untuk melihat daftar user Kerani yang sudah dibuat
+ * Updated with connectivity checks and 2025 credentials
  */
 
 const sql = require('mssql');
 require('dotenv').config({ path: './.env' });
 
-const config = {
-    user: process.env.MSSQL_USER || 'sa',
-    password: process.env.MSSQL_PASSWORD || 'ptrj@123',
-    server: process.env.MSSQL_HOST || 'localhost',
-    port: parseInt(process.env.MSSQL_PORT) || 1433,
-    database: process.env.MSSQL_DATABASE || 'extend_db_ptrj',
-    options: {
-        encrypt: false,
-        trustServerCertificate: true,
+const DB_NAME = process.env.MSSQL_DATABASE || 'extend_db_ptrj';
+
+const configs = [
+    {
+        name: 'Environment Config',
+        user: process.env.MSSQL_USER || 'sa',
+        password: process.env.MSSQL_PASSWORD || 'ptrj@123',
+        server: process.env.MSSQL_HOST || '10.0.0.110',
+        port: parseInt(process.env.MSSQL_PORT) || 1433,
+        database: DB_NAME,
+        options: { encrypt: false, trustServerCertificate: true },
+        timeout: 5000
     },
-};
+    {
+        name: 'Localhost Default',
+        user: 'sa',
+        password: 'ptrj@123',
+        server: 'localhost',
+        port: 1433,
+        database: DB_NAME,
+        options: { encrypt: false, trustServerCertificate: true },
+        timeout: 5000
+    },
+    {
+        name: 'Localhost Alternate',
+        user: 'sa',
+        password: 'Password123',
+        server: 'localhost',
+        port: 1433,
+        database: DB_NAME,
+        options: { encrypt: false, trustServerCertificate: true },
+        timeout: 5000
+    }
+];
+
+async function connectWithStrategy() {
+    for (const conf of configs) {
+        try {
+            const pool = await sql.connect(conf);
+            return pool;
+        } catch (err) {
+            // Check if error is DB missing, if so, we can't list users
+            if (err.message.includes('cannot open database') || err.message.includes('does not exist')) {
+                // console.log(`Database ${conf.database} missing on ${conf.server}.`);
+            }
+        }
+    }
+    throw new Error('Could not connect to database on any configured server.');
+}
 
 async function listKeraniUsers() {
     let pool;
 
     try {
-        pool = await sql.connect(config);
+        pool = await connectWithStrategy();
 
         const result = await pool.request().query(`
             SELECT id, name, email, role, divisi 
             FROM user_ptrj 
-            WHERE role = 'KERANI' 
-            ORDER BY id
+            WHERE role IN ('KERANI', 'ADMIN')
+            ORDER BY role, id
         `);
 
         console.log('\n========================================');
-        console.log('DAFTAR AKUN KERANI:');
+        console.log('DAFTAR AKUN USER (Termasuk Admin):');
         console.log('========================================\n');
 
-        console.log('| No | ID | Divisi      | Username (Email)         | Nama            |');
-        console.log('|----|-----|-------------|--------------------------|-----------------|');
+        console.log('| No | Role     | Divisi      | Username (Email)         | Nama            |');
+        console.log('|----|----------|-------------|--------------------------|-----------------|');
 
         result.recordset.forEach((user, idx) => {
             const no = String(idx + 1).padStart(2, ' ');
-            const id = String(user.id).padStart(3, ' ');
-            const divisi = (user.divisi || '-').padEnd(11, ' ');
+            const role = user.role.padEnd(8, ' ');
+            const divisi = (user.divisi || 'ALL').padEnd(11, ' ');
             const email = user.email.padEnd(24, ' ');
-            const name = user.name.padEnd(15, ' ');
-            console.log(`| ${no} | ${id} | ${divisi} | ${email} | ${name} |`);
+            const name = (user.name || '').padEnd(15, ' ');
+            console.log(`| ${no} | ${role} | ${divisi} | ${email} | ${name} |`);
         });
 
         console.log('\n========================================');
-        console.log(`Total: ${result.recordset.length} akun Kerani`);
+        console.log(`Total: ${result.recordset.length} akun`);
         console.log('========================================\n');
 
-        // Show passwords (these are the plain text passwords we set)
-        const divisions = [
-            'PG1A', 'PG1B', 'PG2A', 'PG2B', 'DME', 'ARA',
-            'ARB1', 'ARB2', 'INFRA', 'AREC', 'IJL', 'STF-OFFICE', 'SECURITY'
-        ];
-
-        console.log('\nKREDENSIAL LOGIN (Username = Email):');
-        console.log('=====================================');
-
-        for (const divisi of divisions) {
-            const username = `kerani_${divisi.toLowerCase().replace('-', '_')}`;
-            const password = `Kerani${divisi.replace('-', '')}2024!`;
-            // Check if user exists
-            const exists = result.recordset.find(u => u.email === username);
-            if (exists) {
-                console.log(`Divisi ${divisi}:`);
-                console.log(`  Username: ${username}`);
-                console.log(`  Password: ${password}`);
-                console.log('');
-            }
-        }
+        console.log('\nKREDENSIAL LOGIN TERBARU (Format: {Divisi}2025):');
+        console.log('=================================================');
+        console.log('Catatan: Untuk INF, password adalah INFRA2025');
+        console.log('         Untuk Admin, password adalah ADMIN2025');
+        console.log('         Untuk Lainnya, format Divisi + 2025\n');
 
     } catch (error) {
         console.error('Error:', error.message);

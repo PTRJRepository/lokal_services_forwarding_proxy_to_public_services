@@ -2,8 +2,9 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/utils/jwt'
 import { serviceRepository } from '@/utils/service-repository'
 import Link from 'next/link'
-import { ExternalLink, Server, Settings, Shield } from 'lucide-react'
+import { Server, Settings, Shield } from 'lucide-react'
 import LogoutButton from '@/components/LogoutButton'
+import ServiceCard from '@/components/ServiceCard'
 
 // Force Node.js runtime
 export const runtime = 'nodejs'
@@ -91,32 +92,14 @@ export default async function DashboardPage() {
                 {services.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {services.map((service) => (
-                            <a
+                            <ServiceCard
                                 key={service.serviceId}
-                                href={service.path || `/${service.serviceId}`}
-                                className="group bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-xl hover:border-palm-green/30 hover:-translate-y-1 transition-all duration-300"
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-palm-green to-emerald-600 flex items-center justify-center text-white shadow-lg">
-                                        <Server className="w-7 h-7" />
-                                    </div>
-                                    <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-palm-green transition-colors" />
-                                </div>
-                                <h3 className="mt-5 text-lg font-bold text-gray-900 group-hover:text-palm-green transition-colors">
-                                    {service.name}
-                                </h3>
-                                <p className="mt-2 text-sm text-gray-500 line-clamp-2">
-                                    {service.description || 'Tidak ada deskripsi'}
-                                </p>
-                                <div className="mt-4 flex items-center justify-between">
-                                    <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">
-                                        {service.path || `/${service.serviceId}`}
-                                    </span>
-                                    <span className="text-xs text-gray-400">
-                                        Klik untuk akses
-                                    </span>
-                                </div>
-                            </a>
+                                name={service.name}
+                                description={service.description || null}
+                                icon={null} // Icon data not currently in DB query, fallback to default
+                                routeUrl={service.path || `/${service.serviceId}`}
+                                imagePath={service.imagePath}
+                            />
                         ))}
                     </div>
                 ) : (

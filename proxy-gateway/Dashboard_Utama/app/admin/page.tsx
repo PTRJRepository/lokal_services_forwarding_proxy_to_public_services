@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import UserManagement from '@/components/UserManagement'
 import ServiceTable from '@/components/ServiceTable'
 import AddServiceForm from '@/components/AddServiceForm'
+import PermissionsTable from '@/components/PermissionsTable'
 import { userRepository } from '@/utils/user-repository'
 import { serviceRepository } from '@/utils/service-repository'
 import { verifyToken } from '@/utils/jwt'
@@ -16,6 +17,10 @@ async function getUsers() {
 
 async function getServices() {
     return await serviceRepository.findAll()
+}
+
+async function getPermissions() {
+    return await serviceRepository.findAllPermissions()
 }
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -69,6 +74,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
     const users = await getUsers()
     const services = await getServices()
+    const permissions = await getPermissions()
 
     return (
         <div className="space-y-6">
@@ -108,8 +114,16 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                 <UserManagement users={users} services={services} />
             ) : (
                 <div className="space-y-8">
-                    <AddServiceForm />
-                    <ServiceTable services={services} />
+                    <PermissionsTable services={services} permissions={permissions} />
+                    <div className="border-t border-gray-200 pt-8">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Tambah Layanan Baru</h3>
+                        <AddServiceForm />
+                    </div>
+
+                    <div className="mt-8">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Daftar Layanan</h3>
+                        <ServiceTable services={services} />
+                    </div>
                 </div>
             )}
         </div>

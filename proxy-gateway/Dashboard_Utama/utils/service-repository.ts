@@ -9,6 +9,7 @@ export interface Service {
     targetUrl?: string
     path?: string
     enabled: boolean
+    imagePath?: string | null
     createdAt?: Date
     updatedAt?: Date
 }
@@ -67,19 +68,29 @@ export class ServiceRepository {
     }
 
     /**
+     * Get all role permissions
+     */
+    async findAllPermissions(): Promise<RolePermission[]> {
+        return db.query<RolePermission>(
+            'SELECT * FROM role_service_permission'
+        )
+    }
+
+    /**
      * Create new service
      */
     async create(data: Omit<Service, 'createdAt' | 'updatedAt'>): Promise<boolean> {
         const affected = await db.execute(
-            `INSERT INTO service_ptrj (serviceId, name, description, serviceUrl, path, enabled)
-             VALUES (@serviceId, @name, @description, @serviceUrl, @path, @enabled)`,
+            `INSERT INTO service_ptrj (serviceId, name, description, serviceUrl, path, enabled, imagePath)
+             VALUES (@serviceId, @name, @description, @serviceUrl, @path, @enabled, @imagePath)`,
             {
                 serviceId: data.serviceId,
                 name: data.name,
                 description: data.description || null,
                 serviceUrl: data.serviceUrl,
                 path: data.path || null,
-                enabled: data.enabled ? 1 : 0
+                enabled: data.enabled ? 1 : 0,
+                imagePath: data.imagePath || null
             }
         )
         return affected > 0
@@ -97,6 +108,7 @@ export class ServiceRepository {
         if (data.serviceUrl !== undefined) { sets.push('serviceUrl = @serviceUrl'); params.serviceUrl = data.serviceUrl }
         if (data.path !== undefined) { sets.push('path = @path'); params.path = data.path }
         if (data.enabled !== undefined) { sets.push('enabled = @enabled'); params.enabled = data.enabled ? 1 : 0 }
+        if (data.imagePath !== undefined) { sets.push('imagePath = @imagePath'); params.imagePath = data.imagePath }
 
         if (sets.length === 0) return false
 
