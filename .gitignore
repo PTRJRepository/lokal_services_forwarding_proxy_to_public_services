@@ -18,7 +18,7 @@ yarn-error.log*
 .env.production.local
 
 # Keys and certificates (specifically for your project)
-keys/
+# keys/
 
 # Runtime data
 pids
@@ -166,4 +166,4 @@ local.properties
 
 # Sensitive files (shouldn't be in version control)
 private.key
-secret.key"0001-Fix-npm-run-build-and-update-permissions-table.patch" 
+secret.key 
