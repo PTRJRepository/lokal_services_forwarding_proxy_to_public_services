@@ -1,0 +1,15 @@
+// SQL Server Configuration
+MSSQL_HOST=10.0.0.110
+MSSQL_PORT=1433
+MSSQL_USER=sa
+MSSQL_PASSWORD=ptrj@123
+MSSQL_DATABASE=extend_db_ptrj
+
+// Auth Configuration
+AUTH_SECRET=ptrj-rebinmas-secret-key-2024
+NEXTAUTH_SECRET=ptrj-rebinmas-secret-key-2024
+NEXTAUTH_URL=http://localhost:3000
+
+// JWT RS256 Keys (relative to project root)
+JWT_PRIVATE_KEY_PATH=./keys/private.pem
+JWT_PUBLIC_KEY_PATH=./keys/public.pem

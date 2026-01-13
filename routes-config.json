@@ -1,0 +1,34 @@
+[
+    {
+        "id": "upah",
+        "path": "/upah",
+        "target": "http://10.0.0.110:5175",
+        "description": "Sistem Penggajian/Payroll",
+        "enabled": true,
+        "rewriteContent": true
+    },
+    {
+        "id": "absen",
+        "path": "/absen",
+        "target": "http://10.0.0.110:5176",
+        "description": "Sistem Absensi Karyawan",
+        "enabled": true,
+        "rewriteContent": true
+    },
+    {
+        "id": "monitoring-beras",
+        "path": "/monitoring-beras",
+        "target": "http://10.0.0.110:5177",
+        "description": "Monitoring Distribusi Beras",
+        "enabled": true,
+        "rewriteContent": true
+    },
+    {
+        "id": "query",
+    "path": "/query",
+    "target": "http://localhost:8001",
+    "description": "SQL Gateway API",
+    "enabled": true,
+    "rewriteContent": false
+}
+]
