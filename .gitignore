@@ -166,4 +166,4 @@ local.properties
 
 # Sensitive files (shouldn't be in version control)
 private.key
-secret.key
+secret.key"0001-Fix-npm-run-build-and-update-permissions-table.patch" 
